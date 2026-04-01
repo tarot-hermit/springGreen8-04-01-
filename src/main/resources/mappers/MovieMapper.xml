@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.springGreen8.dao.MovieDAO">
+
+    <!-- TMDB ID로 영화 조회 -->
+    <select id="selectMovieByTmdbId" parameterType="int" resultType="MovieVO">
+        SELECT
+            movie_no      AS movieNo,
+            tmdb_id       AS tmdbId,
+            title         AS title,
+            title_en      AS titleEn,
+            overview      AS overview,
+            poster_path   AS posterPath,
+            backdrop_path AS backdropPath,
+            release_date  AS releaseDate,
+            runtime       AS runtime,
+            vote_average  AS voteAverage,
+            popularity    AS popularity
+        FROM movie
+        WHERE tmdb_id = #{tmdbId}
+    </select>
+
+    <!-- 영화 저장 -->
+    <insert id="insertMovie" parameterType="MovieVO"
+            useGeneratedKeys="true" keyProperty="movieNo">
+        INSERT INTO movie (tmdb_id, title, title_en, overview,
+                           poster_path, backdrop_path, release_date,
+                           runtime, vote_average, popularity)
+        VALUES (#{tmdbId}, #{title}, #{originalTitle}, #{overview},
+                #{posterPath}, #{backdropPath}, #{releaseDate},
+                #{runtime}, #{voteAverage}, #{popularity})
+    </insert>
+
+</mapper>

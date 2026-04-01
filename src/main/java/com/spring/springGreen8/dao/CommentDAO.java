@@ -1,0 +1,20 @@
+package com.spring.springGreen8.dao;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import com.spring.springGreen8.vo.CommentVO;
+
+@Mapper
+public interface CommentDAO {
+	// ´ñ±Û µî·Ï
+	int insertComment(CommentVO vo);
+	// ¸®ºäº° ´ñ±Û ¸ñ·Ï
+	List<CommentVO> selectCommentsByReviewNo(int reviewNo);
+	// ´ñ±Û ¼öÁ¤
+	int updateComment(CommentVO vo);
+	// ´ñ±Û »èÁ¦
+	int deleteComment(CommentVO vo);
+
+}

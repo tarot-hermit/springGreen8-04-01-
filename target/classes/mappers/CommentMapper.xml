@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.springGreen8.dao.CommentDAO">
+
+    <!-- 댓글 등록 -->
+    <insert id="insertComment" parameterType="CommentVO">
+        INSERT INTO comment (review_no, user_no, content)
+        VALUES (#{reviewNo}, #{userNo}, #{content})
+    </insert>
+
+    <!-- 리뷰별 댓글 목록 -->
+    <select id="selectCommentsByReviewNo" parameterType="int"
+            resultType="CommentVO">
+        SELECT
+            c.comment_no AS commentNo,
+            c.review_no  AS reviewNo,
+            c.user_no    AS userNo,
+            c.content    AS content,
+            c.reg_date   AS regDate,
+            u.user_name  AS userName,
+            u.user_img   AS userImg
+        FROM comment c
+        JOIN users u ON c.user_no = u.user_no
+        WHERE c.review_no = #{reviewNo}
+        ORDER BY c.reg_date ASC
+    </select>
+
+    <!-- 댓글 수정 -->
+    <update id="updateComment" parameterType="CommentVO">
+        UPDATE comment
+        SET content = #{content}
+        WHERE comment_no = #{commentNo}
+          AND user_no    = #{userNo}
+    </update>
+
+    <!-- 댓글 삭제 -->
+    <delete id="deleteComment" parameterType="CommentVO">
+        DELETE FROM comment
+        WHERE comment_no = #{commentNo}
+          AND user_no    = #{userNo}
+    </delete>
+
+</mapper>

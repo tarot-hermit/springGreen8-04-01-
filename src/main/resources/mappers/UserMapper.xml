@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.springGreen8.dao.UserDAO">
+
+    <!-- 회원가입 -->
+    <insert id="insertUser" parameterType="UserVO">
+        INSERT INTO users (user_id, user_pw, user_name, user_email,
+                           user_addr1, user_addr2, user_zipcode)
+        VALUES (#{userId}, #{userPw}, #{userName}, #{userEmail},
+                #{userAddr1}, #{userAddr2}, #{userZipcode})
+    </insert>
+
+    <!-- 아이디 중복 체크 -->
+    <select id="checkId" parameterType="String" resultType="int">
+        SELECT COUNT(*) FROM users WHERE user_id = #{userId}
+    </select>
+
+    <!-- 로그인 -->
+    <select id="selectUserById" parameterType="String" resultType="UserVO">
+        SELECT
+            user_no      AS userNo,
+            user_id      AS userId,
+            user_pw      AS userPw,
+            user_name    AS userName,
+            user_email   AS userEmail,
+            user_img     AS userImg,
+            user_bio     AS userBio,
+            user_role    AS userRole,
+            user_addr1   AS userAddr1,
+            user_addr2   AS userAddr2,
+            user_zipcode AS userZipcode,
+            join_date    AS joinDate
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 회원 조회 (번호) -->
+    <select id="selectUserByNo" parameterType="int" resultType="UserVO">
+        SELECT
+            user_no      AS userNo,
+            user_id      AS userId,
+            user_pw      AS userPw,
+            user_name    AS userName,
+            user_email   AS userEmail,
+            user_img     AS userImg,
+            user_bio     AS userBio,
+            user_role    AS userRole,
+            user_addr1   AS userAddr1,
+            user_addr2   AS userAddr2,
+            user_zipcode AS userZipcode,
+            join_date    AS joinDate
+        FROM users
+        WHERE user_no = #{userNo}
+    </select>
+
+    <!-- 회원정보 수정 -->
+    <update id="updateUser" parameterType="UserVO">
+	    UPDATE users
+	    SET user_name    = #{userName},
+	        user_email   = #{userEmail},
+	        user_img     = #{userImg},
+	        user_bio     = #{userBio},
+	        user_addr1   = #{userAddr1},
+	        user_addr2   = #{userAddr2},
+	        user_zipcode = #{userZipcode}
+	    WHERE user_no = #{userNo}
+	</update>
+
+    <!-- 프로필 이미지 수정 -->
+    <update id="updateUserImg" parameterType="UserVO">
+        UPDATE users
+        SET user_img = #{userImg}
+        WHERE user_no = #{userNo}
+    </update>
+    
+    <select id="checkEmail" parameterType="String" resultType="int">
+    	SELECT COUNT(*) FROM users WHERE user_email = #{userEmail}
+	</select>
+	
+	<!-- 아이디 + 이메일로 회원 조회 -->
+	<select id="selectUserByIdAndEmail" resultType="UserVO">
+	    SELECT
+	        user_no    AS userNo,
+	        user_id    AS userId,
+	        user_name  AS userName,
+	        user_email AS userEmail
+	    FROM users
+	    WHERE user_id    = #{userId}
+	      AND user_email = #{userEmail}
+	</select>
+	
+	<!-- 비밀번호 변경 -->
+	<update id="updatePw" parameterType="UserVO">
+	    UPDATE users
+	    SET user_pw = #{userPw}
+	    WHERE user_no = #{userNo}
+	</update>
+	
+	<!-- 이메일로 회원 조회 -->
+	<select id="selectUserByEmail" parameterType="String" resultType="UserVO">
+	    SELECT
+	        user_no   AS userNo,
+	        user_id   AS userId,
+	        user_name AS userName,
+	        user_email AS userEmail
+	    FROM users
+	    WHERE user_email = #{userEmail}
+	</select>
+	
+	
+	
+	
+</mapper>

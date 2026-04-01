@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="
+		http://mybatis.org/schema/mybatis-spring
+		http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans
+		https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- DB 연결 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+		<property name="url"
+			value="jdbc:mysql://localhost:3306/springGreen8?useSSL=false&amp;serverTimezone=Asia/Seoul&amp;characterEncoding=UTF-8"/>
+		<property name="username" value="root"/>
+		<property name="password" value="1234"/>
+	</bean>
+
+		<bean id="sqlSessionFactoryBean"
+	    class="org.mybatis.spring.SqlSessionFactoryBean">
+	    <property name="dataSource" ref="dataSource"/>
+	    <property name="mapperLocations"
+	        value="classpath:mappers/**/*Mapper.xml"/>
+	    <property name="typeAliasesPackage"
+	        value="com.spring.springGreen8.vo"/>
+	    <!-- 언더스코어 → 카멜케이스 자동 변환 -->
+	    <property name="configuration">
+	        <bean class="org.apache.ibatis.session.Configuration">
+	            <property name="mapUnderscoreToCamelCase" value="true"/>
+	        </bean>
+	    </property>
+	</bean>
+
+	<bean id="sqlSessionTemplate"
+		class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactoryBean"/>
+	</bean>
+
+	<!-- Mapper 스캔 -->
+	<mybatis-spring:scan base-package="com.spring.springGreen8.dao"/>
+
+</beans>

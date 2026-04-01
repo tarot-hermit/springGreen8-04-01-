@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/mvc
+		https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans
+		https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<annotation-driven/>
+
+	<!-- 정적 리소스 -->
+	<resources mapping="/images/**" location="/resources/images/"/>
+	<resources mapping="/css/**"    location="/resources/css/"/>
+	<resources mapping="/js/**"     location="/resources/js/"/>
+	<!-- 업로드 이미지: /data/ 폴더 -->
+	<resources mapping="/data/**"   location="/resources/data/"/>
+	
+	<!-- JSP ViewResolver -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/"/>
+		<beans:property name="suffix" value=".jsp"/>
+	</beans:bean>
+
+	<!-- 컴포넌트 스캔 -->
+	<context:component-scan base-package="com.spring.springGreen8"/>
+
+	<!-- BCrypt 암호화 -->
+	<beans:bean id="bcryptPasswordEncoder"
+		class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+
+	<!-- AOP -->
+	<aop:aspectj-autoproxy/>
+
+	<!-- 파일 업로드 (2MB) -->
+	<beans:bean id="multipartResolver"
+	    class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+	    <beans:property name="maxUploadSize" value="10485760"/>
+	    <beans:property name="defaultEncoding" value="UTF-8"/>
+	</beans:bean>
+
+	<!-- RestTemplate (TMDB API) -->
+	<beans:bean id="restTemplate"
+		class="org.springframework.web.client.RestTemplate"/>
+		
+		
+		<beans:bean id="mailSender"
+		    class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		    <beans:property name="host" value="smtp.gmail.com"/>
+		    <beans:property name="port" value="587"/>
+		    <beans:property name="username" value="dldk5252@gmail.com"/>
+		    <beans:property name="password" value="rxpaxajzfueezutv"/>
+		    <beans:property name="javaMailProperties">
+		        <beans:props>
+		            <beans:prop key="mail.smtp.auth">true</beans:prop>
+		            <beans:prop key="mail.smtp.starttls.enable">true</beans:prop>
+		            <beans:prop key="mail.smtp.ssl.trust">smtp.gmail.com</beans:prop>
+		        </beans:props>
+		    </beans:property>
+		</beans:bean>
+	
+	<!-- 관리자 인터셉터 -->
+	<interceptors>
+	    <interceptor>
+	        <mapping path="/admin/**"/>
+				<beans:bean class="com.spring.springGreen8.AdminInterceptor"/>
+	    </interceptor>
+	</interceptors>
+	
+	
+</beans:beans>

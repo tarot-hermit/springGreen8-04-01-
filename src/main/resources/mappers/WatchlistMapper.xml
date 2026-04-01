@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.springGreen8.dao.WatchlistDAO">
+
+    <!-- 찜 추가 -->
+    <insert id="insertWatch" parameterType="WatchlistVO">
+        INSERT INTO watchlist (user_no, movie_no, status)
+        VALUES (#{userNo}, #{movieNo}, #{status})
+    </insert>
+
+    <!-- 찜 삭제 -->
+    <delete id="deleteWatch" parameterType="WatchlistVO">
+        DELETE FROM watchlist
+        WHERE user_no = #{userNo}
+          AND movie_no = #{movieNo}
+    </delete>
+
+    <!-- 찜 조회 -->
+    <select id="selectWatch" parameterType="WatchlistVO" resultType="WatchlistVO">
+        SELECT
+            watch_no  AS watchNo,
+            user_no   AS userNo,
+            movie_no  AS movieNo,
+            status    AS status,
+            reg_date  AS regDate
+        FROM watchlist
+        WHERE user_no  = #{userNo}
+          AND movie_no = #{movieNo}
+    </select>
+
+    <!-- 회원별 찜 목록 -->
+    <select id="selectWatchlistByUserNo" parameterType="int" resultType="WatchlistVO">
+        SELECT
+            w.watch_no   AS watchNo,
+            w.user_no    AS userNo,
+            w.movie_no   AS movieNo,
+            w.status     AS status,
+            w.reg_date   AS regDate,
+            m.title      AS title,
+            m.poster_path AS posterPath,
+            m.tmdb_id    AS tmdbId
+        FROM watchlist w
+        JOIN movie m ON w.movie_no = m.movie_no
+        WHERE w.user_no = #{userNo}
+        ORDER BY w.reg_date DESC
+    </select>
+
+    <!-- 상태 변경 -->
+    <update id="updateWatchStatus" parameterType="WatchlistVO">
+        UPDATE watchlist
+        SET status = #{status}
+        WHERE user_no  = #{userNo}
+          AND movie_no = #{movieNo}
+    </update>
+
+</mapper>

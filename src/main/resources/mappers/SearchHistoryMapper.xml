@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.springGreen8.dao.SearchHistoryDAO">
+
+    <!-- 검색 기록 저장 -->
+    <insert id="insertSearch" parameterType="SearchHistoryVO">
+        INSERT INTO search_history (user_no, keyword, result_cnt)
+        VALUES (#{userNo}, #{keyword}, #{resultCnt})
+    </insert>
+
+    <!-- 회원별 최근 검색어 (최대 10개) -->
+    <select id="selectSearchByUserNo" parameterType="int"
+            resultType="SearchHistoryVO">
+        SELECT
+            search_no   AS searchNo,
+            user_no     AS userNo,
+            keyword     AS keyword,
+            result_cnt  AS resultCnt,
+            search_date AS searchDate
+        FROM search_history
+        WHERE user_no = #{userNo}
+        ORDER BY search_date DESC
+        LIMIT 10
+    </select>
+
+    <!-- 검색어 단건 삭제 -->
+    <delete id="deleteSearch" parameterType="int">
+        DELETE FROM search_history
+        WHERE search_no = #{searchNo}
+    </delete>
+
+    <!-- 전체 삭제 -->
+    <delete id="deleteAllSearch" parameterType="int">
+        DELETE FROM search_history
+        WHERE user_no = #{userNo}
+    </delete>
+
+</mapper>
