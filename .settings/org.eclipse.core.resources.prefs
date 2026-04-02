@@ -1,3 +1,10 @@
 eclipse.preferences.version=1
+encoding//src/main/java/com/spring/springGreen8/controller/AdminController.java=UTF-8
+encoding//src/main/java/com/spring/springGreen8/controller/CollectionController.java=UTF-8
+encoding//src/main/java/com/spring/springGreen8/controller/CommentController.java=UTF-8
+encoding//src/main/java/com/spring/springGreen8/controller/ReviewController.java=UTF-8
 encoding//src/main/java/com/spring/springGreen8/controller/UserController.java=UTF-8
+encoding//src/main/java/com/spring/springGreen8/dao/ReviewDAO.java=UTF-8
+encoding//src/main/java/com/spring/springGreen8/filter/XssFilter.java=UTF-8
+encoding//src/main/java/com/spring/springGreen8/util/InputValidator.java=UTF-8
 encoding//src/main/webapp/WEB-INF/views/user/join.jsp=UTF-8

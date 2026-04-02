@@ -9,4 +9,6 @@ public interface MovieDAO {
 	MovieVO selectMovieByTmdbId(int tmdbId);
 	
 	int insertMovie(MovieVO vo);
+	
+	MovieVO selectMovieByNo(int movieNo);
 }

@@ -1,8 +1,10 @@
 package com.spring.springGreen8.controller;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -26,20 +28,17 @@ import com.spring.springGreen8.vo.WatchlistVO;
 @RequestMapping("/user")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    @Autowired private UserService      userService;
+    @Autowired private EmailService     emailService;
+    @Autowired private ReviewService    reviewService;
+    @Autowired private WatchlistService watchlistService;
+    @Autowired private ServletContext   servletContext;
 
-    @Autowired
-    private EmailService emailService;
-    
-    @Autowired
-    private ReviewService reviewService;
-
-    @Autowired
-    private WatchlistService watchlistService;
-    
-    @Autowired
-    private ServletContext servletContext;
+    // ── 로그인 실패 추적 (서버 메모리) ──────────────────────────
+    private static final ConcurrentHashMap<String, Integer> failMap  = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Long>    lockMap  = new ConcurrentHashMap<>();
+    private static final int  MAX_FAIL     = 5;
+    private static final long LOCK_MINUTES = 10;
 
     // 회원가입 폼
     @RequestMapping(value = "/join", method = RequestMethod.GET)
@@ -47,9 +46,39 @@ public class UserController {
         return "user/join";
     }
 
-    // 회원가입 처리
+    // 회원가입 처리 — 서버사이드 입력값 검증 추가
     @RequestMapping(value = "/join", method = RequestMethod.POST)
     public String joinProc(UserVO vo, Model model) {
+
+        // 1. 필수 필드 공백 검사
+        if (isBlank(vo.getUserId(), vo.getUserPw(), vo.getUserEmail(), vo.getUserName())) {
+            model.addAttribute("message", "모든 필수 항목을 입력해주세요.");
+            model.addAttribute("url", "user/join");
+            return "common/message";
+        }
+
+        // 2. 아이디 형식 검사 (영문+숫자 4~20자)
+        if (!vo.getUserId().matches("^[a-zA-Z0-9]{4,20}$")) {
+            model.addAttribute("message", "아이디는 영문·숫자 4~20자로 입력해주세요.");
+            model.addAttribute("url", "user/join");
+            return "common/message";
+        }
+
+        // 3. 비밀번호 형식 검사 (영문+숫자+특수문자 필수, 8~20자)
+        if (!vo.getUserPw().matches(
+                "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$")) {
+            model.addAttribute("message", "비밀번호는 영문+숫자+특수문자(!@#$%^&*) 포함 8~20자로 입력해주세요.");
+            model.addAttribute("url", "user/join");
+            return "common/message";
+        }
+
+        // 4. 이메일 형식 검사
+        if (!vo.getUserEmail().matches("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$")) {
+            model.addAttribute("message", "이메일 형식이 올바르지 않습니다.");
+            model.addAttribute("url", "user/join");
+            return "common/message";
+        }
+
         try {
             int result = userService.join(vo);
             if (result > 0) {
@@ -80,19 +109,51 @@ public class UserController {
         return "user/login";
     }
 
-    // 로그인 처리
+    // 로그인 처리 — 실패 횟수 제한 + 세션 재발급 추가
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public String loginProc(String userId, String userPw,
-                            HttpSession session, Model model) {
-        UserVO user = userService.login(userId, userPw);
-        if (user != null) {
-            session.setAttribute("loginUser", user);
-            return "redirect:/";
-        } else {
-            model.addAttribute("message", "아이디 또는 비밀번호가 틀렸습니다.");
+                            HttpServletRequest request, Model model) {
+
+        // 1. 계정 잠금 확인
+        if (isLocked(userId)) {
+            long remain = getRemainingLockMinutes(userId);
+            model.addAttribute("message",
+                "로그인 시도 초과로 " + remain + "분간 잠겼습니다. 잠시 후 다시 시도해주세요.");
             model.addAttribute("url", "user/login");
             return "common/message";
         }
+
+        // 2. 로그인 검증
+        UserVO user = userService.login(userId, userPw);
+
+        if (user == null) {
+            // 실패 횟수 증가
+            int failCnt = failMap.merge(userId, 1, Integer::sum);
+            int remain  = MAX_FAIL - failCnt;
+            if (failCnt >= MAX_FAIL) {
+                lockMap.put(userId, System.currentTimeMillis());
+                failMap.put(userId, 0);
+                model.addAttribute("message",
+                    "로그인 " + MAX_FAIL + "회 실패로 " + LOCK_MINUTES + "분간 잠겼습니다.");
+            } else {
+                model.addAttribute("message",
+                    "아이디 또는 비밀번호가 틀렸습니다. (남은 시도: " + remain + "회)");
+            }
+            model.addAttribute("url", "user/login");
+            return "common/message";
+        }
+
+        // 3. 로그인 성공 — 실패 카운터 초기화
+        failMap.remove(userId);
+        lockMap.remove(userId);
+
+        // 4. 세션 재발급 (Session Fixation 공격 방어)
+        HttpSession oldSession = request.getSession(false);
+        if (oldSession != null) oldSession.invalidate();
+        HttpSession newSession = request.getSession(true);
+        newSession.setAttribute("loginUser", user);
+
+        return "redirect:/";
     }
 
     // 로그아웃
@@ -111,38 +172,29 @@ public class UserController {
             model.addAttribute("url", "user/login");
             return "common/message";
         }
-
-        List<ReviewVO> reviewList = reviewService.getReviewsByUserNo(loginUser.getUserNo());
+        List<ReviewVO>   reviewList = reviewService.getReviewsByUserNo(loginUser.getUserNo());
         List<WatchlistVO> watchList = watchlistService.getWatchlistByUserNo(loginUser.getUserNo());
-
         if (!reviewList.isEmpty()) {
             double sum = 0;
-            for (ReviewVO r : reviewList) {
-                sum += r.getRating();
-            }
-            double avg = Math.round((sum / reviewList.size()) * 10) / 10.0;
-            model.addAttribute("avgRating", avg);
+            for (ReviewVO r : reviewList) sum += r.getRating();
+            model.addAttribute("avgRating", Math.round((sum / reviewList.size()) * 10) / 10.0);
         }
-
-        model.addAttribute("user", loginUser);
+        model.addAttribute("user",       loginUser);
         model.addAttribute("reviewList", reviewList);
-        model.addAttribute("watchList", watchList);
+        model.addAttribute("watchList",  watchList);
         return "user/mypage";
     }
 
-    // 이메일 인증코드 발송 (Ajax)
+    // 이메일 인증코드 발송
     @RequestMapping(value = "/sendEmail", method = RequestMethod.POST)
     @ResponseBody
     public String sendEmail(String userEmail, HttpSession session) {
         String code = emailService.sendAuthMail(userEmail);
-        if (code != null) {
-            session.setAttribute("emailCode", code);
-            return "ok";
-        }
+        if (code != null) { session.setAttribute("emailCode", code); return "ok"; }
         return "fail";
     }
 
-    // 이메일 인증코드 확인 (Ajax)
+    // 이메일 인증코드 확인
     @RequestMapping(value = "/checkEmailCode", method = RequestMethod.POST)
     @ResponseBody
     public String checkEmailCode(String code, HttpSession session) {
@@ -153,15 +205,14 @@ public class UserController {
         }
         return "fail";
     }
-    
+
     @RequestMapping(value = "/checkEmail", method = RequestMethod.POST)
     @ResponseBody
     public String checkEmail(String userEmail) {
-        int cnt = userService.checkEmail(userEmail);
-        return cnt > 0 ? "dup" : "ok";
+        return userService.checkEmail(userEmail) > 0 ? "dup" : "ok";
     }
-    
- // 프로필 수정 폼
+
+    // 프로필 수정 폼
     @RequestMapping(value = "/edit", method = RequestMethod.GET)
     public String editForm(HttpSession session, Model model) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
@@ -185,28 +236,21 @@ public class UserController {
             return "common/message";
         }
         vo.setUserNo(loginUser.getUserNo());
-
-        // 이미지 업로드 처리
         if (imgFile != null && !imgFile.isEmpty()) {
             String fileName = saveFile(imgFile);
             if (fileName != null) {
                 vo.setUserImg(fileName);
-                // 기존 이미지 삭제 (default.png 제외)
                 if (!loginUser.getUserImg().equals("default.png")) {
-                	String oldPath = servletContext.getRealPath("/resources/data/")
-                            + "/" + loginUser.getUserImg();
-                    new java.io.File(oldPath).delete();
+                    new java.io.File(servletContext.getRealPath("/resources/data/")
+                            + "/" + loginUser.getUserImg()).delete();
                 }
             }
         } else {
             vo.setUserImg(loginUser.getUserImg());
         }
-
         int result = userService.updateUser(vo);
         if (result > 0) {
-            // 세션 정보 업데이트
-            UserVO updatedUser = userService.getUser(loginUser.getUserNo());
-            session.setAttribute("loginUser", updatedUser);
+            session.setAttribute("loginUser", userService.getUser(loginUser.getUserNo()));
             model.addAttribute("message", "프로필이 수정되었습니다.");
             model.addAttribute("url", "user/mypage");
         } else {
@@ -226,36 +270,113 @@ public class UserController {
             model.addAttribute("url", "user/login");
             return "common/message";
         }
-        // 현재 비밀번호 확인
-        UserVO user = userService.login(loginUser.getUserId(), currentPw);
-        if (user == null) {
+        if (userService.login(loginUser.getUserId(), currentPw) == null) {
             model.addAttribute("message", "현재 비밀번호가 틀렸습니다.");
             model.addAttribute("url", "user/edit");
             return "common/message";
         }
-        // 새 비밀번호 저장
         UserVO vo = new UserVO();
         vo.setUserNo(loginUser.getUserNo());
         vo.setUserPw(DigestUtils.sha256Hex(newPw));
         userService.updatePw(vo);
+        session.invalidate();
         model.addAttribute("message", "비밀번호가 변경되었습니다. 다시 로그인해주세요.");
         model.addAttribute("url", "user/login");
-        session.invalidate();
         return "common/message";
     }
 
-    // 파일 저장 유틸
+    // 아이디 찾기 폼
+    @RequestMapping(value = "/findId", method = RequestMethod.GET)
+    public String findIdForm() { return "user/findId"; }
+
+    // 아이디 찾기 - 인증코드 발송
+    @RequestMapping(value = "/findId/sendCode", method = RequestMethod.POST)
+    @ResponseBody
+    public String findIdSendCode(String userEmail, HttpSession session) {
+        UserVO user = userService.getUserByEmail(userEmail);
+        if (user == null) return "notFound";
+        String code = emailService.sendAuthMail(userEmail);
+        if (code == null) return "fail";
+        session.setAttribute("emailCode",   code);
+        session.setAttribute("findIdEmail", userEmail);
+        return "ok";
+    }
+
+    // 아이디 찾기 - 코드 확인
+    @RequestMapping(value = "/findId/checkCode", method = RequestMethod.POST)
+    @ResponseBody
+    public String findIdCheckCode(String code, HttpSession session) {
+        String savedCode = (String) session.getAttribute("emailCode");
+        if (savedCode == null || !savedCode.equals(code)) return "fail";
+        String email = (String) session.getAttribute("findIdEmail");
+        UserVO user  = userService.getUserByEmail(email);
+        if (user == null) return "fail";
+        session.removeAttribute("emailCode");
+        session.removeAttribute("findIdEmail");
+        String userId = user.getUserId();
+        return userId.substring(0, 2) + "*".repeat(userId.length() - 2);
+    }
+
+    // 비밀번호 찾기 폼
+    @RequestMapping(value = "/findPw", method = RequestMethod.GET)
+    public String findPwForm() { return "user/findPw"; }
+
+    // 비밀번호 찾기 - 인증코드 발송
+    @RequestMapping(value = "/findPw/sendCode", method = RequestMethod.POST)
+    @ResponseBody
+    public String findPwSendCode(String userId, String userEmail, HttpSession session) {
+        UserVO user = userService.getUserByIdAndEmail(userId, userEmail);
+        if (user == null) return "notFound";
+        String code = emailService.sendAuthMail(userEmail);
+        if (code == null) return "fail";
+        session.setAttribute("emailCode",    code);
+        session.setAttribute("findPwUserId", userId);
+        return "ok";
+    }
+
+    // 비밀번호 찾기 - 변경
+    @RequestMapping(value = "/findPw/changePw", method = RequestMethod.POST)
+    @ResponseBody
+    public String findPwChange(String userId, String newPw, HttpSession session) {
+        String sessionUserId = (String) session.getAttribute("findPwUserId");
+        if (sessionUserId == null || !sessionUserId.equals(userId)) return "fail";
+        UserVO vo = userService.getUserByUserId(userId);
+        if (vo == null) return "fail";
+        vo.setUserPw(DigestUtils.sha256Hex(newPw));
+        userService.updatePw(vo);
+        session.removeAttribute("emailCode");
+        session.removeAttribute("findPwUserId");
+        return "ok";
+    }
+
+    // ── 내부 헬퍼 ────────────────────────────────────────────────
+    private boolean isLocked(String userId) {
+        Long lockTime = lockMap.get(userId);
+        if (lockTime == null) return false;
+        long elapsed = (System.currentTimeMillis() - lockTime) / 60000;
+        if (elapsed >= LOCK_MINUTES) { lockMap.remove(userId); return false; }
+        return true;
+    }
+
+    private long getRemainingLockMinutes(String userId) {
+        Long lockTime = lockMap.get(userId);
+        if (lockTime == null) return 0;
+        return Math.max(0, LOCK_MINUTES - (System.currentTimeMillis() - lockTime) / 60000);
+    }
+
+    private boolean isBlank(String... values) {
+        for (String v : values) if (v == null || v.trim().isEmpty()) return true;
+        return false;
+    }
+
     private String saveFile(MultipartFile file) {
         try {
-            // 실제 프로젝트 내부 경로
             String uploadPath = servletContext.getRealPath("/resources/data/");
-            java.io.File dir = new java.io.File(uploadPath);
+            java.io.File dir  = new java.io.File(uploadPath);
             if (!dir.exists()) dir.mkdirs();
-
             String originalName = file.getOriginalFilename();
-            String ext = originalName.substring(originalName.lastIndexOf("."));
-            String fileName = System.currentTimeMillis() + ext;
-
+            String ext          = originalName.substring(originalName.lastIndexOf("."));
+            String fileName     = System.currentTimeMillis() + ext;
             file.transferTo(new java.io.File(uploadPath + "/" + fileName));
             return fileName;
         } catch (Exception e) {
@@ -263,90 +384,4 @@ public class UserController {
             return null;
         }
     }
-    // 아이디 찾기 폼
-    @RequestMapping(value = "/findId" , method = RequestMethod.GET)
-    public String findIdForm() {
-    	return "user/findId";
-    }
-    // 아이디 찾기 - 인증코드 발송
-    @RequestMapping(value = "/findId/sendCode" , method= RequestMethod.POST)
-    @ResponseBody
-    public String findIdSendCode(String userEmail, HttpSession session) {
-    	// 이메일로 회원 조회
-    	UserVO user = userService.getUserByEmail(userEmail);
-    	if (user == null) return "notFound";
-    	
-    	// 인증 코드 발송
-    	String code = emailService.sendAuthMail(userEmail);
-    	if (code == null) return "fail";
-    	
-    	session.setAttribute("emailCode", code);
-    	session.setAttribute("findIdEmail", userEmail);
-    	return "ok";
-    }
-    
-    @RequestMapping(value = "/findId/checkCode", method = RequestMethod.POST)
-    @ResponseBody
-    public String findIdCheckCode(String code , HttpSession session) {
-    	String savedCode = (String) session.getAttribute("emailCode");
-    	if (savedCode == null || !savedCode.equals(code)) return "fail";
-    	
-    	String email = (String) session.getAttribute("findIdEmail");
-    	UserVO user = userService.getUserByEmail(email);
-    	if (user == null) return "fail";
-    	
-    	// 세션 정리
-    	session.removeAttribute("emailCode");
-    	session.removeAttribute("findIdEmail");
-    	
-    	// 아이디 마스킹 (앞 2자리만 보이고 나머지 * 처리)
-    	String userId = user.getUserId();
-    	String masked = userId.substring(0,2)
-    					+ "*".repeat(userId.length() - 2);
-    	return masked;
-    }
-    
- // 비밀번호 찾기 폼
-    @RequestMapping(value = "/findPw", method = RequestMethod.GET)
-    public String findPwForm() {
-        return "user/findPw";
-    }
-
-    // 인증코드 발송
-    @RequestMapping(value = "/findPw/sendCode", method = RequestMethod.POST)
-    @ResponseBody
-    public String findPwSendCode(String userId, String userEmail,
-                                  HttpSession session) {
-        // 아이디 + 이메일 일치 확인
-        UserVO user = userService.getUserByIdAndEmail(userId, userEmail);
-        if (user == null) return "notFound";
-
-        // 인증코드 발송
-        String code = emailService.sendAuthMail(userEmail);
-        if (code == null) return "fail";
-
-        session.setAttribute("emailCode", code);
-        session.setAttribute("findPwUserId", userId);
-        return "ok";
-    }
-
-    // 비밀번호 변경
-    @RequestMapping(value = "/findPw/changePw", method = RequestMethod.POST)
-    @ResponseBody
-    public String findPwChange(String userId, String newPw,
-                                HttpSession session) {
-        String sessionUserId = (String) session.getAttribute("findPwUserId");
-        if (sessionUserId == null || !sessionUserId.equals(userId)) return "fail";
-
-        UserVO vo = userService.getUserByUserId(userId);
-        if (vo == null) return "fail";
-
-        vo.setUserPw(DigestUtils.sha256Hex(newPw));
-        userService.updatePw(vo);
-
-        session.removeAttribute("emailCode");
-        session.removeAttribute("findPwUserId");
-        return "ok";
-    }
-    
 }

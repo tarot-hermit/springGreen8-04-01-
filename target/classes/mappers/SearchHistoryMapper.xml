@@ -36,5 +36,16 @@
         DELETE FROM search_history
         WHERE user_no = #{userNo}
     </delete>
+    
+    <select id="selectPopularKeywords" resultType="java.util.HashMap">
+	    SELECT
+	        keyword,
+	        COUNT(*)         AS searchCnt,
+	        MAX(search_date) AS lastSearched
+	    FROM search_history
+	    GROUP BY keyword
+	    ORDER BY searchCnt DESC
+	    LIMIT 10
+	</select>
 
 </mapper>

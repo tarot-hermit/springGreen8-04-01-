@@ -16,13 +16,20 @@ public class AdminInterceptor implements HandlerInterceptor {
                              HttpServletResponse response,
                              Object handler) throws Exception {
 
-        HttpSession session = request.getSession();
-        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        HttpSession session = request.getSession(false);
 
-        if (loginUser == null || !"ADMIN".equals(loginUser.getUserRole())) {
+        // 세션 없거나 로그인 안 된 경우
+        if (session == null || session.getAttribute("loginUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login");
+            return false;
+        }
+
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (!"ADMIN".equals(loginUser.getUserRole())) {
             response.sendRedirect(request.getContextPath() + "/");
             return false;
         }
+
         return true;
     }
 

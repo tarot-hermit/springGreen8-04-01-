@@ -43,9 +43,38 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
+	<!-- XSS 필터 (한글 필터 다음에 위치) -->
+	<filter>
+		<filter-name>xssFilter</filter-name>
+		<filter-class>com.spring.springGreen8.filter.XssFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>xssFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- 세션 타임아웃 (30분) -->
 	<session-config>
 		<session-timeout>30</session-timeout>
 	</session-config>
+
+	<!-- 에러 페이지 -->
+	<error-page>
+		<error-code>404</error-code>
+		<location>/WEB-INF/views/error/404.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>403</error-code>
+		<location>/WEB-INF/views/error/403.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>500</error-code>
+		<location>/WEB-INF/views/error/500.jsp</location>
+	</error-page>
+	<error-page>
+		<exception-type>java.lang.Exception</exception-type>
+		<location>/WEB-INF/views/error/500.jsp</location>
+	</error-page>
 
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>

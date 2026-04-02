@@ -32,5 +32,11 @@
                 #{posterPath}, #{backdropPath}, #{releaseDate},
                 #{runtime}, #{voteAverage}, #{popularity})
     </insert>
-
+	
+	<select id="selectMovieByNo" parameterType="int" resultType="MovieVO">
+	    SELECT movie_no, tmdb_id, title, poster_path, release_date
+	    FROM movie
+	    WHERE movie_no = #{movieNo}
+	</select>
+	
 </mapper>

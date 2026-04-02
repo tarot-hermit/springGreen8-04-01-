@@ -12,63 +12,92 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.spring.springGreen8.dao.AdminDAO;
+import com.spring.springGreen8.dao.SearchHistoryDAO;
+import com.spring.springGreen8.vo.ReportVO;
 import com.spring.springGreen8.vo.ReviewVO;
 import com.spring.springGreen8.vo.UserVO;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-	
+
+    @Autowired
+    private AdminDAO adminDAO;
+    
+
 	@Autowired
-	private AdminDAO adminDAO;
-	
-	// ´ë½Ãº¸µå
-	@RequestMapping("/dashboard")
-	public String dashboard(Model model) {
-		Map<String, Object> stats = adminDAO.getDashboardStats();
-		model.addAttribute("stats",stats);
-		return "admin/dashboard";
-	}
-	
-	// È¸¿ø ¸ñ·Ï
-	@RequestMapping("/users")
-	public String userList(Model model) {
-		List<UserVO> users = adminDAO.getAllUsers();
-		model.addAttribute("users",users);
-		return "admin/userList";
-	}
-	
-	// È¸¿ø ¿ªÇÒ º¯°æ(Ajax)
-	@RequestMapping(value = "/user/role" , method = RequestMethod.POST)
-	@ResponseBody
-	public String updateRole(@RequestParam int userNo,
-							 @RequestParam String userRole) {
-		int result = adminDAO.updateUserRole(userNo, userRole);
-		return result > 0 ? "ok" : "fail";
-	}
-	// È¸¿ø °­Á¦ Å»Åğ(Ajax)
-	@RequestMapping(value = "/user/delete" , method = RequestMethod.POST)
-	@ResponseBody
-	public String deleteUser(@RequestParam int userNo) {
-		int result = adminDAO.deleteUser(userNo);
-		return result > 0 ? "ok" : "fail";
-	}
-	
-	//¸®ºä ¸ñ·Ï 
-	@RequestMapping("/reviews")
-	public String reviewList(Model model) {
-		List<ReviewVO> reviews = adminDAO.getAllReviews();
-		model.addAttribute("reviews",reviews);
-		return "admin/reviewList";
-	}
-	// ¸®ºä °­Á¦ »èÁ¦ (Ajax)
-	@RequestMapping(value = "/review/delete" , method = RequestMethod.POST)
-	@ResponseBody
-	public String deleteReview(@RequestParam int reviewNo) {
-		int result = adminDAO.deleteReview(reviewNo);
-		return result > 0 ? "ok" : "fail";
-	}
-	
-	
-	
+	private SearchHistoryDAO searchHistoryDAO;
+
+    // ëŒ€ì‹œë³´ë“œ
+    @RequestMapping("/dashboard")
+    public String dashboard(Model model) {
+        Map<String, Object> stats = adminDAO.getDashboardStats();
+        model.addAttribute("stats", stats);
+        return "admin/dashboard";
+    }
+
+    // íšŒì› ëª©ë¡
+    @RequestMapping("/users")
+    public String userList(Model model) {
+        List<UserVO> users = adminDAO.getAllUsers();
+        model.addAttribute("users", users);
+        return "admin/userList";
+    }
+
+    // íšŒì› ë“±ê¸‰ ë³€ê²½ Ajax â€” userNo ê¸°ë°˜
+    @RequestMapping(value = "/user/role", method = RequestMethod.POST)
+    @ResponseBody
+    public String updateRole(@RequestParam int userNo,
+                             @RequestParam String userRole) {
+        int result = adminDAO.updateUserRole(userNo, userRole);
+        return result > 0 ? "ok" : "fail";
+    }
+
+    // íšŒì› ê°•ì œ íƒˆí‡´ Ajax â€” userNo ê¸°ë°˜
+    @RequestMapping(value = "/user/delete", method = RequestMethod.POST)
+    @ResponseBody
+    public String deleteUser(@RequestParam int userNo) {
+        int result = adminDAO.deleteUser(userNo);
+        return result > 0 ? "ok" : "fail";
+    }
+
+    // ë¦¬ë·° ëª©ë¡
+    @RequestMapping("/reviews")
+    public String reviewList(Model model) {
+        List<ReviewVO> reviews = adminDAO.getAllReviews();
+        model.addAttribute("reviews", reviews);
+        return "admin/reviewList";
+    }
+
+    // ë¦¬ë·° ì‚­ì œ Ajax
+    @RequestMapping(value = "/review/delete", method = RequestMethod.POST)
+    @ResponseBody
+    public String deleteReview(@RequestParam int reviewId) {
+        int result = adminDAO.deleteReview(reviewId);
+        return result > 0 ? "ok" : "fail";
+    }
+
+    // ì‹ ê³  ëª©ë¡
+    @RequestMapping("/reports")
+    public String reportList(Model model) {
+        List<ReportVO> reports = adminDAO.getAllReports();
+        model.addAttribute("reports", reports);
+        return "admin/reportList";
+    }
+
+    // ì‹ ê³  ìƒíƒœ ë³€ê²½ Ajax
+    @RequestMapping(value = "/report/status", method = RequestMethod.POST)
+    @ResponseBody
+    public String updateReportStatus(@RequestParam int reportId,
+                                     @RequestParam String status) {
+        int result = adminDAO.updateReportStatus(reportId, status);
+        return result > 0 ? "ok" : "fail";
+    }
+    
+ // ê²€ìƒ‰ì–´ í†µê³„ (dashboard ì—ì„œ ajax ë˜ëŠ” ë³„ë„ í˜ì´ì§€)
+    @RequestMapping("/stats/keywords")
+    public String keywordStats(Model model) {
+        model.addAttribute("popularKeywords", searchHistoryDAO.selectPopularKeywords());
+        return "admin/dashboard";  // dashboard ì— í•¨ê»˜ í‘œì‹œ
+    }
 }

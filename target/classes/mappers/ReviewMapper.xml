@@ -122,5 +122,39 @@
 	    WHERE review_no = #{reviewNo}
 	</select>
     
-
+    <select id="getRatingStats" parameterType="int" resultType="java.util.HashMap">
+	    SELECT
+	        SUM(CASE WHEN rating >= 0.5 AND rating &lt; 1.5 THEN 1 ELSE 0 END) AS star1,
+	        SUM(CASE WHEN rating >= 1.5 AND rating &lt; 2.5 THEN 1 ELSE 0 END) AS star2,
+	        SUM(CASE WHEN rating >= 2.5 AND rating &lt; 3.5 THEN 1 ELSE 0 END) AS star3,
+	        SUM(CASE WHEN rating >= 3.5 AND rating &lt; 4.5 THEN 1 ELSE 0 END) AS star4,
+	        SUM(CASE WHEN rating >= 4.5                    THEN 1 ELSE 0 END) AS star5
+	    FROM review
+	    WHERE movie_no = #{movieNo}
+	</select>
+	
+	<!-- 정렬 옵션 리뷰 목록 -->
+	<select id="selectReviewsSorted" resultType="ReviewVO">
+	    SELECT
+	        r.review_no AS reviewNo,
+	        r.movie_no  AS movieNo,
+	        r.user_no   AS userNo,
+	        r.rating,
+	        r.content,
+	        r.spoiler,
+	        r.like_cnt  AS likeCnt,
+	        r.reg_date  AS regDate,
+	        u.user_name AS userName,
+	        u.user_img  AS userImg
+	    FROM review r
+	    JOIN users u ON r.user_no = u.user_no
+	    WHERE r.movie_no = #{movieNo}
+	    <choose>
+	        <when test="sort == 'rating_high'">ORDER BY r.rating DESC, r.reg_date DESC</when>
+	        <when test="sort == 'rating_low'"> ORDER BY r.rating ASC,  r.reg_date DESC</when>
+	        <when test="sort == 'like'">       ORDER BY r.like_cnt DESC, r.reg_date DESC</when>
+	        <otherwise>                        ORDER BY r.reg_date DESC</otherwise>
+	    </choose>
+	</select>
+	
 </mapper>

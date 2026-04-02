@@ -34,6 +34,7 @@
       <li><a href="${ctp}/admin/dashboard"><i class="fa fa-bar-chart"></i> 대시보드</a></li>
       <li><a href="${ctp}/admin/users"><i class="fa fa-users"></i> 회원 관리</a></li>
       <li><a href="${ctp}/admin/reviews" class="active"><i class="fa fa-star"></i> 리뷰 관리</a></li>
+      <li><a href="${ctp}/admin/reports"><i class="fa fa-flag"></i> 신고 관리</a></li>
       <li><a href="${ctp}/"><i class="fa fa-home"></i> 사이트로</a></li>
     </ul>
   </div>
@@ -41,7 +42,7 @@
   <div class="main-area">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="page-title mb-0">리뷰 관리 <span style="font-size:1rem;color:#64748b;font-weight:400;">(${reviews.size()}건)</span></div>
-      <input type="text" id="searchInput" placeholder="영화명 / 작성자 검색..." oninput="filterTable()" style="width:220px;">
+      <input type="text" id="searchInput" placeholder="작성자 / 내용 검색..." oninput="filterTable()" style="width:220px;">
     </div>
 
     <div class="table-dark-custom">
@@ -49,7 +50,7 @@
         <thead>
           <tr>
             <th>No</th>
-            <th>영화</th>
+            <th>영화ID</th>
             <th>작성자</th>
             <th>별점</th>
             <th>내용</th>
@@ -63,12 +64,12 @@
           <tr id="row-${r.reviewNo}">
             <td style="color:#475569;">${st.index+1}</td>
             <td>
-              <a href="${ctp}/movie/detail/${r.tmdbId}"
+              <a href="${ctp}/movie/detail/${r.movieNo}"
                  style="color:#60a5fa;text-decoration:none;font-weight:600;">
-                ${r.movieTitle}
+                ${r.movieNo}
               </a>
             </td>
-            <td>${r.userName}</td>
+            <td>${r.userNo}</td>
             <td class="text-warning fw-bold">${r.rating}★</td>
             <td class="content-cell" title="${r.content}">${r.content}</td>
             <td style="color:#64748b;">${r.likeCnt}</td>
@@ -97,8 +98,8 @@ function filterTable() {
 
 function deleteReview(reviewNo) {
     if (!confirm('해당 리뷰를 삭제하시겠습니까?')) return;
-    $.post(ctp + '/admin/review/delete', { reviewNo: reviewNo }, function(res) {
-        if (res == 'ok') { $('#row-' + reviewNo).remove(); }
+    $.post(ctp + '/admin/review/delete', { reviewId: reviewNo }, function(res) {
+        if (res === 'ok') { $('#row-' + reviewNo).remove(); }
         else alert('실패했습니다.');
     });
 }

@@ -1,6 +1,7 @@
 package com.spring.springGreen8.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -85,5 +86,15 @@ public class ReviewServiceImpl implements ReviewService {
 	@Override
 	public ReviewVO getReviewByNo(int reviewNo) {
 	    return reviewDAO.selectReviewByNo(reviewNo);
+	}
+	
+	@Override
+	public List<Map<String, Object>> getRatingStats(int movieNo) {
+	    return reviewDAO.getRatingStats(movieNo);
+	}
+
+	@Override
+	public List<ReviewVO> getReviewsSorted(int movieNo, String sort) {
+	    return reviewDAO.selectReviewsSorted(movieNo, sort);
 	}
 }

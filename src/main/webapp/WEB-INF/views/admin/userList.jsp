@@ -23,7 +23,7 @@
     .table-dark-custom td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; font-size:14px; }
     .role-badge { padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
     .role-admin { background:rgba(52,208,88,0.15); color:#34d058; }
-    .role-user { background:rgba(148,163,184,0.1); color:#94a3b8; }
+    .role-user  { background:rgba(148,163,184,0.1); color:#94a3b8; }
     input[type=text] { background:#0f172a; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:8px 14px; }
     input[type=text]::placeholder { color:#475569; }
   </style>
@@ -36,6 +36,7 @@
       <li><a href="${ctp}/admin/dashboard"><i class="fa fa-bar-chart"></i> 대시보드</a></li>
       <li><a href="${ctp}/admin/users" class="active"><i class="fa fa-users"></i> 회원 관리</a></li>
       <li><a href="${ctp}/admin/reviews"><i class="fa fa-star"></i> 리뷰 관리</a></li>
+      <li><a href="${ctp}/admin/reports"><i class="fa fa-flag"></i> 신고 관리</a></li>
       <li><a href="${ctp}/"><i class="fa fa-home"></i> 사이트로</a></li>
     </ul>
   </div>
@@ -52,9 +53,9 @@
           <tr>
             <th>No</th>
             <th>아이디</th>
-            <th>이름</th>
+            <th>닉네임</th>
             <th>이메일</th>
-            <th>역할</th>
+            <th>등급</th>
             <th>가입일</th>
             <th>관리</th>
           </tr>
@@ -102,10 +103,10 @@ function filterTable() {
     });
 }
 
-function changeRole(userNo, role) {
-    if (!confirm(role + ' 권한으로 변경하시겠습니까?')) return;
-    $.post(ctp + '/admin/user/role', { userNo: userNo, userRole: role }, function(res) {
-        if (res == 'ok') { alert('변경되었습니다.'); location.reload(); }
+function changeRole(userNo, userRole) {
+    if (!confirm(userRole + ' 권한으로 변경하시겠습니까?')) return;
+    $.post(ctp + '/admin/user/role', { userNo: userNo, userRole: userRole }, function(res) {
+        if (res === 'ok') { alert('변경되었습니다.'); location.reload(); }
         else alert('실패했습니다.');
     });
 }
@@ -113,7 +114,7 @@ function changeRole(userNo, role) {
 function deleteUser(userNo) {
     if (!confirm('해당 회원을 강제 탈퇴시키겠습니까?\n관련 데이터가 삭제될 수 있습니다.')) return;
     $.post(ctp + '/admin/user/delete', { userNo: userNo }, function(res) {
-        if (res == 'ok') { $('#row-' + userNo).remove(); alert('탈퇴처리 완료'); }
+        if (res === 'ok') { $('#row-' + userNo).remove(); alert('탈퇴처리 완료'); }
         else alert('실패했습니다.');
     });
 }

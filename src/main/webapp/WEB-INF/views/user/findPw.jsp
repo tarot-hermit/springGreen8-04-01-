@@ -365,35 +365,43 @@
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 var codeVerified = false;
 var regPw = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$/;
 
+var Toast = Swal.mixin({
+    toast: true, position: 'top-end',
+    showConfirmButton: false, timer: 2000, timerProgressBar: true
+});
+
 function sendCode() {
-    var userId = $('#userId').val();
+    var userId    = $('#userId').val();
     var userEmail = $('#userEmail').val();
-
-    if (!userId) { alert('아이디를 입력해주세요.'); return; }
-    if (!userEmail) { alert('이메일을 입력해주세요.'); return; }
-
-    $('#sendMsg').html('<span class="text-info">인증코드 발송 중...</span>');
-
+    if (!userId) {
+        Swal.fire({ icon: 'warning', title: '아이디 필요', text: '아이디를 입력해주세요.' }); return;
+    }
+    if (!userEmail) {
+        Swal.fire({ icon: 'warning', title: '이메일 필요', text: '이메일을 입력해주세요.' }); return;
+    }
+    Swal.fire({
+        title: '인증코드 발송 중...', text: '잠시만 기다려주세요.',
+        allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }
+    });
     $.ajax({
-        url: '${ctp}/user/findPw/sendCode',
-        type: 'POST',
-        data: {
-            userId: userId,
-            userEmail: userEmail
-        },
+        url: '${ctp}/user/findPw/sendCode', type: 'POST',
+        data: { userId: userId, userEmail: userEmail },
         success: function(res) {
+            Swal.close();
             if (res == 'ok') {
-                $('#sendMsg').html('<span class="text-info">인증코드가 발송되었습니다. 5분 내 입력해주세요.</span>');
+                $('#sendMsg').html('<span class="text-info">✓ 인증코드가 발송되었습니다. 5분 내 입력해주세요.</span>');
+                Toast.fire({ icon: 'success', title: '인증코드가 발송되었습니다.' });
             } else if (res == 'notFound') {
                 $('#sendMsg').html('');
                 $('#step1').hide();
                 $('#stepFail').show();
             } else {
-                $('#sendMsg').html('<span class="text-danger">발송에 실패했습니다. 다시 시도해주세요.</span>');
+                Swal.fire({ icon: 'error', title: '발송 실패', text: '다시 시도해주세요.' });
             }
         }
     });
@@ -401,20 +409,22 @@ function sendCode() {
 
 function checkCode() {
     var code = $('#code').val();
-    if (!code) { alert('인증코드를 입력해주세요.'); return; }
-
+    if (!code) {
+        Swal.fire({ icon: 'warning', title: '코드 필요', text: '인증코드를 입력해주세요.' }); return;
+    }
     $.ajax({
-        url: '${ctp}/user/checkEmailCode',
-        type: 'POST',
+        url: '${ctp}/user/checkEmailCode', type: 'POST',
         data: { code: code },
         success: function(res) {
             if (res == 'ok') {
-                $('#codeMsg').html('<span class="text-success">인증이 완료되었습니다.</span>');
+                $('#codeMsg').html('<span class="text-success">✓ 인증이 완료되었습니다.</span>');
                 $('#step1').hide();
                 $('#step2').show();
                 codeVerified = true;
+                Toast.fire({ icon: 'success', title: '인증 완료!' });
             } else {
                 $('#codeMsg').html('<span class="text-danger">인증코드가 올바르지 않습니다.</span>');
+                Swal.fire({ icon: 'error', title: '인증 실패', text: '인증코드가 올바르지 않습니다.' });
                 codeVerified = false;
             }
         }
@@ -423,9 +433,9 @@ function checkCode() {
 
 $('#newPw').on('input', function() {
     if (!regPw.test($(this).val())) {
-        $('#pwMsg').html('<span class="text-danger">영문+숫자+특수문자 8~20자로 입력해주세요.</span>');
+        $('#pwMsg').html('<span class="text-danger">영문+숫자+특수문자(!@#$%^&*) 8~20자로 입력해주세요.</span>');
     } else {
-        $('#pwMsg').html('<span class="text-success">사용 가능한 비밀번호입니다.</span>');
+        $('#pwMsg').html('<span class="text-success">✓ 사용 가능한 비밀번호입니다.</span>');
     }
 });
 
@@ -433,41 +443,38 @@ $('#newPwCheck').on('input', function() {
     if ($('#newPw').val() !== $(this).val()) {
         $('#pwCheckMsg').html('<span class="text-danger">비밀번호가 일치하지 않습니다.</span>');
     } else {
-        $('#pwCheckMsg').html('<span class="text-success">비밀번호가 일치합니다.</span>');
+        $('#pwCheckMsg').html('<span class="text-success">✓ 비밀번호가 일치합니다.</span>');
     }
 });
 
 function changePw() {
-    var userId = $('#userId').val();
-    var newPw = $('#newPw').val();
+    var userId     = $('#userId').val();
+    var newPw      = $('#newPw').val();
     var newPwCheck = $('#newPwCheck').val();
 
     if (!codeVerified) {
-        alert('이메일 인증을 먼저 완료해주세요.');
-        return;
+        Swal.fire({ icon: 'warning', title: '인증 필요', text: '이메일 인증을 먼저 완료해주세요.' }); return;
     }
     if (!regPw.test(newPw)) {
-        alert('비밀번호 형식을 확인해주세요.');
-        return;
+        Swal.fire({ icon: 'warning', title: '비밀번호 오류', text: '영문+숫자+특수문자(!@#$%^&*) 8~20자로 입력해주세요.' }); return;
     }
     if (newPw !== newPwCheck) {
-        alert('비밀번호가 일치하지 않습니다.');
-        return;
+        Swal.fire({ icon: 'warning', title: '비밀번호 불일치', text: '비밀번호가 일치하지 않습니다.' }); return;
     }
-
     $.ajax({
-        url: '${ctp}/user/findPw/changePw',
-        type: 'POST',
-        data: {
-            userId: userId,
-            newPw: newPw
-        },
+        url: '${ctp}/user/findPw/changePw', type: 'POST',
+        data: { userId: userId, newPw: newPw },
         success: function(res) {
             if (res == 'ok') {
                 $('#step2').hide();
                 $('#step3').show();
+                Swal.fire({
+                    icon: 'success', title: '변경 완료',
+                    text: '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.',
+                    timer: 2000, showConfirmButton: false
+                });
             } else {
-                alert('비밀번호 변경에 실패했습니다.');
+                Swal.fire({ icon: 'error', title: '변경 실패', text: '비밀번호 변경에 실패했습니다.' });
             }
         }
     });

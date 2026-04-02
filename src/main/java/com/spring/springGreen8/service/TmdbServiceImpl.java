@@ -263,5 +263,50 @@ public class TmdbServiceImpl implements TmdbService {
         return cast;
     }
     
-    
+    // 개봉 예정
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<MovieVO> getUpcomingMovies(int page) {
+        String url = BASE_URL + "/movie/upcoming?api_key=" + API_KEY
+                   + "&language=" + LANG + "&page=" + page
+                   + "&region=KR";
+        Map<String, Object> response =
+            restTemplate.getForObject(url, Map.class);
+        return parseMovieList(response);
+    }
+
+    // 트렌딩 (timeWindow: "day" | "week")
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<MovieVO> getTrendingMovies(String timeWindow) {
+        String url = BASE_URL + "/trending/movie/" + timeWindow
+                   + "?api_key=" + API_KEY + "&language=" + LANG;
+        Map<String, Object> response =
+            restTemplate.getForObject(url, Map.class);
+        return parseMovieList(response);
+    }
+
+    // 영화 키워드 태그
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getMovieKeywords(int tmdbId) {
+        String url = BASE_URL + "/movie/" + tmdbId + "/keywords?api_key=" + API_KEY;
+        Map<String, Object> res = restTemplate.getForObject(url, Map.class);
+        if (res == null) return new ArrayList<>();
+        List<Map<String, Object>> keywords =
+            (List<Map<String, Object>>) res.get("keywords");
+        return keywords != null ? keywords : new ArrayList<>();
+    }
+
+    // 비슷한 영화
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<MovieVO> getSimilarMovies(int tmdbId, int page) {
+        String url = BASE_URL + "/movie/" + tmdbId + "/similar?api_key=" + API_KEY
+                   + "&language=" + LANG + "&page=" + page;
+        Map<String, Object> response =
+            restTemplate.getForObject(url, Map.class);
+        return parseMovieList(response);
+    }
+
 }

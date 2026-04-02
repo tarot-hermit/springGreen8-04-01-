@@ -2,6 +2,7 @@ package com.spring.springGreen8.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpSession;
 
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.spring.springGreen8.dao.MovieDAO;
@@ -21,75 +23,110 @@ import com.spring.springGreen8.vo.UserVO;
 @RequestMapping("/review")
 public class ReviewController {
 
-		
-	@Autowired
-	private ReviewService reviewService;
-	
-	@Autowired
-	private MovieDAO movieDAO;
-	
-	@RequestMapping(value = "/write", method = RequestMethod.POST)
-	@ResponseBody
-	public String write(ReviewVO vo , HttpSession session) {
-		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-		if (loginUser == null) return "login";
-		
-		// movieNo ¿⁄∏Æø° tmdbId∞° µÈæÓø»
-		vo.setUserNo(loginUser.getUserNo());
-		int result = reviewService.writeReview(vo);
-		return result > 0 ? "ok" : "fail";
-	}
-	
-	@RequestMapping(value = "/list", method = RequestMethod.GET)
-	@ResponseBody
-	public List<ReviewVO> list(int movieNo) {
-	    // movieNo ¿⁄∏Æø° tmdbId∞° µÈæÓø» °Ê ≥ª∫Œ movie_no ∑Œ ∫Ø»Ø
-	    MovieVO movie = movieDAO.selectMovieByTmdbId(movieNo);
-	    if (movie == null) return new ArrayList<>();
-	    return reviewService.getReviewsByMovieNo(movie.getMovieNo());
-	}
-	
-	// ∏Æ∫‰ ºˆ¡§ (Ajax)
-	@RequestMapping(value = "/update" , method = RequestMethod.POST)
-	@ResponseBody
-	public String update(ReviewVO vo , HttpSession session) {
-		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-		if (loginUser == null) return "login";
-		vo.setUserNo(loginUser.getUserNo());
-		int result = reviewService.updateReview(vo);
-		return result > 0 ? "ok" : "fail";	
-	}
-	// ∏Æ∫‰ ªË¡¶ (Ajax)
-	 @RequestMapping(value = "/delete", method = RequestMethod.POST)
-	 @ResponseBody
-	 public String delete(ReviewVO vo , HttpSession session) {
-		 UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-		 if (loginUser == null) return "login";
-		 vo.setUserNo(loginUser.getUserNo());
-		 int result = reviewService.deleteReview(vo);
-		 return result > 0 ? "ok" : "fail";
-	 }
-	
-	
-	// ∞¯∞® ≈‰±€(Ajax)
-	 @RequestMapping(value = "/like", method = RequestMethod.POST)
-	 @ResponseBody
-	 public String like(int reviewNo, HttpSession session) {
-	     UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-	     if (loginUser == null) return "login";
+    @Autowired private ReviewService reviewService;
+    @Autowired private MovieDAO      movieDAO;
 
-	     // ∫ª¿Œ ∏Æ∫‰¿Œ¡ˆ »Æ¿Œ
-	     ReviewVO review = reviewService.getReviewByNo(reviewNo);
-	     if (review != null && review.getUserNo() == loginUser.getUserNo()) {
-	         return "own";  // ∫ª¿Œ ∏Æ∫‰ ¬˜¥‹
-	     }
+    // Î¶¨Î∑∞ Îì±Î°ù
+    @RequestMapping(value = "/write", method = RequestMethod.POST)
+    @ResponseBody
+    public String write(ReviewVO vo, HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) return "login";
 
-	     return reviewService.toggleLike(reviewNo, loginUser.getUserNo());
-	 }
-	
-	
-	
-	
-	
-	
+        // ÎÇ¥Ïö© Í∏∏Ïù¥ Í≤ÄÏ¶ù (10Ïûê Ïù¥ÏÉÅ ~ 2000Ïûê Ïù¥Ìïò)
+        if (vo.getContent() == null
+                || vo.getContent().trim().length() < 10
+                || vo.getContent().trim().length() > 2000) {
+            return "length";
+        }
+
+        vo.setUserNo(loginUser.getUserNo());
+        int result = reviewService.writeReview(vo);
+        return result > 0 ? "ok" : "fail";
+    }
+
+    // Î¶¨Î∑∞ Î™©Î°ù
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    @ResponseBody
+    public List<ReviewVO> list(int movieNo) {
+        MovieVO movie = movieDAO.selectMovieByTmdbId(movieNo);
+        if (movie == null) return new ArrayList<>();
+        return reviewService.getReviewsByMovieNo(movie.getMovieNo());
+    }
+
+    // Î¶¨Î∑∞ ÏàòÏ†ï ‚Äî ÎÇ¥Ïö© Í∏∏Ïù¥ Í≤ÄÏ¶ù + Î≥∏Ïù∏ ÌôïÏù∏
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    @ResponseBody
+    public String update(ReviewVO vo, HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) return "login";
+
+        // ÎÇ¥Ïö© Í∏∏Ïù¥ Í≤ÄÏ¶ù
+        if (vo.getContent() == null
+                || vo.getContent().trim().length() < 10
+                || vo.getContent().trim().length() > 2000) {
+            return "length";
+        }
+
+        // Î≥∏Ïù∏ ÌôïÏù∏ ‚Äî DBÏóêÏÑú ÏõêÎ≥∏ Ï°∞Ìöå ÌõÑ userNo ÎπÑÍµê
+        ReviewVO original = reviewService.getReviewByNo(vo.getReviewNo());
+        if (original == null || original.getUserNo() != loginUser.getUserNo()) {
+            return "auth";  // Í∂åÌïú ÏóÜÏùå
+        }
+
+        vo.setUserNo(loginUser.getUserNo());
+        int result = reviewService.updateReview(vo);
+        return result > 0 ? "ok" : "fail";
+    }
+
+    // Î¶¨Î∑∞ ÏÇ≠Ï†ú ‚Äî Î≥∏Ïù∏ ÌôïÏù∏
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    @ResponseBody
+    public String delete(ReviewVO vo, HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) return "login";
+
+        // Î≥∏Ïù∏ ÎòêÎäî Í¥ÄÎ¶¨ÏûêÎßå ÏÇ≠Ï†ú Í∞ÄÎä•
+        ReviewVO original = reviewService.getReviewByNo(vo.getReviewNo());
+        if (original == null) return "fail";
+
+        boolean isOwner = original.getUserNo() == loginUser.getUserNo();
+        boolean isAdmin = "ADMIN".equals(loginUser.getUserRole());
+        if (!isOwner && !isAdmin) return "auth";
+
+        vo.setUserNo(loginUser.getUserNo());
+        int result = reviewService.deleteReview(vo);
+        return result > 0 ? "ok" : "fail";
+    }
+
+    // Í≥µÍ∞ê ÌÜ†Í∏Ä
+    @RequestMapping(value = "/like", method = RequestMethod.POST)
+    @ResponseBody
+    public String like(int reviewNo, HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) return "login";
+        ReviewVO review = reviewService.getReviewByNo(reviewNo);
+        if (review != null && review.getUserNo() == loginUser.getUserNo()) return "own";
+        return reviewService.toggleLike(reviewNo, loginUser.getUserNo());
+    }
+
+    // Ï†ïÎ†¨ ÏòµÏÖò Î¶¨Î∑∞ Î™©Î°ù
+    @RequestMapping(value = "/list/sorted", method = RequestMethod.GET)
+    @ResponseBody
+    public List<ReviewVO> listSorted(@RequestParam int movieNo,
+                                     @RequestParam(defaultValue = "latest") String sort) {
+        MovieVO movie = movieDAO.selectMovieByTmdbId(movieNo);
+        if (movie == null) return new ArrayList<>();
+        return reviewService.getReviewsSorted(movie.getMovieNo(), sort);
+    }
+
+    // Î≥ÑÏ†ê Î∂ÑÌè¨
+    @RequestMapping(value = "/stats", method = RequestMethod.GET,
+                    produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public List<Map<String, Object>> ratingStats(@RequestParam int movieNo) {
+        MovieVO movie = movieDAO.selectMovieByTmdbId(movieNo);
+        if (movie == null) return new ArrayList<>();
+        return reviewService.getRatingStats(movie.getMovieNo());
+    }
 }

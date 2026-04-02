@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -509,6 +510,7 @@
 	  transform: translateY(-4px);
 	}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
@@ -552,18 +554,27 @@
           </div>
 
           <div class="action-group d-flex flex-wrap gap-2">
-            <c:if test="${not empty sessionScope.loginUser}">
-              <button class="btn me-0 ${not empty myWatch ? 'btn-success' : 'btn-outline-success'}"
-                      id="watchBtn" onclick="toggleWatchlist()">
-                <i class="fa fa-heart"></i>
-                ${not empty myWatch ? '찜 완료' : '보고싶어요'}
-              </button>
-            </c:if>
-
-            <a href="${ctp}/movie/list" class="btn btn-soft-secondary">
-              <i class="fa fa-arrow-left me-1"></i> 목록으로
-            </a>
-          </div>
+			  <c:if test="${not empty sessionScope.loginUser}">
+			    <button class="btn me-0 ${not empty myWatch ? 'btn-success' : 'btn-outline-success'}"
+			            id="watchBtn" onclick="toggleWatchlist()">
+			      <i class="fa fa-heart"></i>
+			      ${not empty myWatch ? '찜 완료' : '보고싶어요'}
+			    </button>
+			    <c:if test="${not empty sessionScope.loginUser}">
+				  <button class="btn btn-outline-info" id="watchedBtn"
+				          onclick="toggleWatched()">
+				    <i class="fa fa-eye"></i> <span id="watchedBtnText">봤어요</span>
+				  </button>
+				</c:if>
+			    <%-- 컬렉션 추가 버튼 --%>
+			    <button class="btn btn-outline-warning" onclick="openCollectionModal()">
+			      <i class="fa fa-folder-open"></i> 컬렉션에 추가
+			    </button>
+			  </c:if>
+			  <a href="${ctp}/movie/list" class="btn btn-soft-secondary">
+			    <i class="fa fa-arrow-left me-1"></i> 목록으로
+			  </a>
+			</div>
         </div>
       </div>
     </div>
@@ -586,6 +597,11 @@
             </c:choose>
           </div>
         </div>
+        <div class="content-card mb-4" id="ratingStatsBox" style="display:none;">
+		  <h4 class="section-title">별점 분포</h4>
+		  <div id="ratingStatsInner"></div>
+		</div>
+        
 		<%-- ① 예고편 --%>
 		<c:if test="${not empty videos}">
 		<div class="content-card mb-4">
@@ -774,7 +790,10 @@
                                 id="content" rows="5"
                                 placeholder="이 영화에 대한 리뷰를 작성해주세요."></textarea>
                     </div>
-
+					<div class="d-flex justify-content-between align-items-center mt-1">
+					  <small id="contentMsg" class="text-danger"></small>
+					  <small id="contentCount" class="text-secondary">0 / 2000</small>
+					</div>
                     <div class="form-check mb-4">
                       <input class="form-check-input" type="checkbox" id="spoiler">
                       <label class="form-check-label text-secondary">스포일러 포함</label>
@@ -796,9 +815,19 @@
         </div>
 
         <div class="content-card">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h4 class="section-title mb-0">리뷰</h4>
-          </div>
+		  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+		    <h4 class="section-title mb-0">리뷰</h4>
+		    <div class="d-flex gap-2">
+		      <button class="btn btn-sm sort-btn active" onclick="sortReviews('latest', this)"
+		              style="border-radius:999px;font-size:12px;font-weight:700;background:#28a745;color:#fff;border:none;">최신순</button>
+		      <button class="btn btn-sm sort-btn" onclick="sortReviews('rating_high', this)"
+		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">별점높은순</button>
+		      <button class="btn btn-sm sort-btn" onclick="sortReviews('rating_low', this)"
+		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">별점낮은순</button>
+		      <button class="btn btn-sm sort-btn" onclick="sortReviews('like', this)"
+		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">공감순</button>
+		    </div>
+		  </div>
 
           <div id="reviewList">
             <div class="empty-card">
@@ -807,7 +836,10 @@
           </div>
         </div>
       </div>
-
+		<div class="content-card mb-4" id="similarBox" style="display:none;">
+		  <h4 class="section-title">비슷한 영화</h4>
+		  <div class="row g-3" id="similarList"></div>
+		</div>
       <!-- 오른쪽 정보 -->
       <div class="col-lg-4">
         <div class="info-card">
@@ -844,6 +876,53 @@
     </div>
   </div>
 </div>
+<%-- 컬렉션 추가 모달 --%>
+<c:if test="${not empty sessionScope.loginUser}">
+<div class="modal fade" id="collectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#1e1e1e;color:#fff;border:1px solid rgba(255,255,255,0.12);">
+      <div class="modal-header" style="border-color:rgba(255,255,255,0.1);">
+        <h5 class="modal-title">컬렉션에 추가</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="collectionModalBody">
+        <div class="text-center py-3 text-secondary">불러오는 중...</div>
+      </div>
+      <div class="modal-footer" style="border-color:rgba(255,255,255,0.1);">
+        <a href="${ctp}/collection/list" class="btn btn-outline-secondary btn-sm">
+          컬렉션 관리
+        </a>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+</c:if>
+<c:if test="${not empty sessionScope.loginUser}">
+<div class="modal fade" id="reportModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#1e1e1e;color:#fff;border:1px solid rgba(255,255,255,0.12);">
+      <div class="modal-header" style="border-color:rgba(255,255,255,0.1);">
+        <h5 class="modal-title">리뷰 신고</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="reportTargetId">
+        <div class="mb-3">
+          <label class="form-label">신고 사유</label>
+          <textarea id="reportReason" class="form-control"
+                    style="background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.1);"
+                    rows="3" placeholder="신고 사유를 입력해주세요 (500자 이하)" maxlength="500"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-color:rgba(255,255,255,0.1);">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+        <button class="btn btn-danger btn-sm" onclick="submitReport()">신고하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+</c:if>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
 
@@ -853,12 +932,88 @@ var editRating = ${not empty myReview ? myReview.rating : 0};
 var tmdbId = ${movie.tmdbId};
 var ctp = '${ctp}';
 var loginUserNo = ${not empty sessionScope.loginUser ? sessionScope.loginUser.userNo : 0};
+var currentSort = 'latest';
 
-/* ── 페이지 로드 시 리뷰 목록 ── */
 $(document).ready(function() {
     loadReviews();
     setEditRating(editRating);
-});
+
+    // ── textarea 실시간 체크 ──
+    $('#content').on('input', function() {
+        var len = $(this).val().trim().length;
+        $('#contentCount').text(len + ' / 2000');
+        if (len === 0) {
+            $('#contentMsg').text('');
+        } else if (len < 10) {
+            $('#contentMsg').html('<span class="text-danger">10자 이상 입력해주세요. (' + len + '/10)</span>');
+        } else if (len > 2000) {
+            $('#contentMsg').html('<span class="text-danger">2000자를 초과했습니다.</span>');
+        } else {
+            $('#contentMsg').html('<span class="text-success">✓ 작성 가능합니다.</span>');
+        }
+    }); // ← on('input') 여기서 닫힘
+
+    // ── 봤어요 초기 상태 확인 ──
+    $.get(ctp + '/movie/watched/check', { movieNo: tmdbId }, function(res) {
+        if (res.watched) {
+            $('#watchedBtn').removeClass('btn-outline-info').addClass('btn-info');
+            $('#watchedBtnText').text('봤어요 ✓');
+        }
+    }, 'json');
+
+    // ── 별점 분포 로드 ──
+   $.get(ctp + '/review/stats', { movieNo: tmdbId }, function(list) {
+	    if (!list || list.length === 0) return;
+	    var data = list[0];
+	    if (!data) return;
+        var stars = ['star5','star4','star3','star2','star1'];
+        var labels = ['5점','4점','3점','2점','1점'];
+        var total = 0;
+        stars.forEach(function(k) { total += (data[k] || 0); });
+        if (total === 0) return;
+        var html = '';
+        stars.forEach(function(k, i) {
+            var cnt = data[k] || 0;
+            var pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+            html += '<div class="d-flex align-items-center gap-2 mb-2">';
+            html += '<span style="font-size:13px;color:#ffc107;min-width:28px;">' + labels[i] + '</span>';
+            html += '<div class="flex-grow-1" style="background:rgba(255,255,255,0.08);border-radius:999px;height:8px;">';
+            html += '<div style="width:' + pct + '%;background:#ffc107;height:8px;border-radius:999px;transition:width .4s;"></div>';
+            html += '</div>';
+            html += '<span style="font-size:12px;color:#aaa;min-width:40px;text-align:right;">' + cnt + '명</span>';
+            html += '</div>';
+        });
+        $('#ratingStatsInner').html(html);
+        $('#ratingStatsBox').show();
+    }, 'json');
+
+    // ── 비슷한 영화 로드 ──
+    $.get(ctp + '/movie/similar', { tmdbId: tmdbId, page: 1 }, function(list) {
+        if (!list || list.length === 0) return;
+        var show = list.slice(0, 6);
+        var html = '';
+        show.forEach(function(m) {
+            if (!m.posterPath) return;
+            html += '<div class="col-6 col-md-4 col-lg-2">';
+            html += '<div style="cursor:pointer;border-radius:12px;overflow:hidden;';
+            html += 'background:rgba(255,255,255,0.05);transition:transform .2s;"';
+            html += ' onclick="location.href=\'' + ctp + '/movie/detail/' + m.tmdbId + '\'"';
+            html += ' onmouseover="this.style.transform=\'translateY(-4px)\'"';
+            html += ' onmouseout="this.style.transform=\'\'">';
+            html += '<img src="https://image.tmdb.org/t/p/w300' + m.posterPath + '"';
+            html += ' style="width:100%;aspect-ratio:2/3;object-fit:cover;"';
+            html += ' onerror="this.style.display=\'none\'">';
+            html += '<div style="padding:8px;font-size:12px;font-weight:700;';
+            html += 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.title + '</div>';
+            html += '</div></div>';
+        });
+        if (html) {
+            $('#similarList').html(html);
+            $('#similarBox').show();
+        }
+    }, 'json');
+
+}); // ← document.ready 여기서 닫힘
 
 /* ── 별점 선택 ── */
 function setRating(val) {
@@ -870,7 +1025,6 @@ function setRating(val) {
     });
 }
 
-/* ── 별점 호버 ── */
 $('#starRating span').hover(
     function() {
         var val = $(this).data('val');
@@ -880,13 +1034,11 @@ $('#starRating span').hover(
     },
     function() {
         $('#starRating span').each(function() {
-            $(this).css('color',
-                $(this).data('val') <= currentRating ? '#ffc107' : '#555');
+            $(this).css('color', $(this).data('val') <= currentRating ? '#ffc107' : '#555');
         });
     }
 );
 
-/* ── 수정 별점 ── */
 function setEditRating(val) {
     editRating = val;
     $('#editRating').val(val);
@@ -895,41 +1047,44 @@ function setEditRating(val) {
     });
 }
 
-/* ── 수정 폼 표시/숨김 ── */
-function showEditForm() {
-    $('#myReviewBox').hide();
-    $('#editForm').show();
-}
-function hideEditForm() {
-    $('#editForm').hide();
-    $('#myReviewBox').show();
-}
+function showEditForm() { $('#myReviewBox').hide(); $('#editForm').show(); }
+function hideEditForm()  { $('#editForm').hide();   $('#myReviewBox').show(); }
 
 /* ── 리뷰 등록 ── */
 function submitReview() {
-    var rating = $('#rating').val();
+    var rating  = $('#rating').val();
     var content = $('#content').val();
     var spoiler = $('#spoiler').is(':checked') ? 1 : 0;
 
-    if (rating == 0) { alert('별점을 선택해주세요.'); return; }
-    if (!content.trim()) { alert('리뷰 내용을 입력해주세요.'); return; }
+    if (rating == 0) {
+        Swal.fire({ icon: 'warning', title: '별점 필요', text: '별점을 선택해주세요.' });
+        return;
+    }
+    if (content.trim().length < 10) {
+        Swal.fire({ icon: 'warning', title: '내용 부족', text: '리뷰 내용은 10자 이상 입력해주세요.' });
+        return;
+    }
+    if (content.trim().length > 2000) {
+        Swal.fire({ icon: 'warning', title: '내용 초과', text: '리뷰 내용은 2000자 이하로 작성해주세요.' });
+        return;
+    }
 
     $.ajax({
-        url: ctp + '/review/write',
-        type: 'POST',
-        data: { movieNo: tmdbId, rating: rating,
-                content: content, spoiler: spoiler },
+        url: ctp + '/review/write', type: 'POST',
+        data: { movieNo: tmdbId, rating: rating, content: content, spoiler: spoiler },
         success: function(res) {
             if (res == 'ok') {
-                alert('리뷰가 등록되었습니다.');
-                location.reload();
-            } else if (res == 'login') {
-                alert('로그인이 필요합니다.');
-                location.href = ctp + '/user/login';
+                Swal.fire({ icon: 'success', title: '등록 완료', text: '리뷰가 등록되었습니다.', timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload());
             } else if (res == 'dup') {
-                alert('이미 이 영화에 리뷰를 작성하셨습니다.');
+                Swal.fire({ icon: 'info', title: '이미 작성한 리뷰', text: '이 영화에 이미 리뷰를 작성하셨습니다. 기존 리뷰를 수정해주세요.' });
+            } else if (res == 'length') {
+                Swal.fire({ icon: 'warning', title: '내용 길이 오류', text: '리뷰 내용은 10자 이상 2000자 이하로 작성해주세요.' });
+            } else if (res == 'login') {
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                    .then(() => location.href = ctp + '/user/login');
             } else {
-                alert('리뷰 등록에 실패했습니다.');
+                Swal.fire({ icon: 'error', title: '등록 실패', text: '리뷰 등록에 실패했습니다.' });
             }
         }
     });
@@ -937,23 +1092,26 @@ function submitReview() {
 
 /* ── 리뷰 수정 ── */
 function updateReview(reviewNo) {
-    var rating = $('#editRating').val();
+    var rating  = $('#editRating').val();
     var content = $('#editContent').val();
     var spoiler = $('#editSpoiler').is(':checked') ? 1 : 0;
 
-    if (!content.trim()) { alert('리뷰 내용을 입력해주세요.'); return; }
+    if (!content.trim()) {
+        Swal.fire({ icon: 'warning', title: '내용 필요', text: '리뷰 내용을 입력해주세요.' });
+        return;
+    }
 
     $.ajax({
-        url: ctp + '/review/update',
-        type: 'POST',
-        data: { reviewNo: reviewNo, rating: rating,
-                content: content, spoiler: spoiler },
+        url: ctp + '/review/update', type: 'POST',
+        data: { reviewNo: reviewNo, rating: rating, content: content, spoiler: spoiler },
         success: function(res) {
             if (res == 'ok') {
-                alert('리뷰가 수정되었습니다.');
-                location.reload();
+                Swal.fire({ icon: 'success', title: '수정 완료', text: '리뷰가 수정되었습니다.', timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload());
+            } else if (res == 'auth') {
+                Swal.fire({ icon: 'error', title: '권한 없음', text: '수정 권한이 없습니다.' });
             } else {
-                alert('수정에 실패했습니다.');
+                Swal.fire({ icon: 'error', title: '수정 실패', text: '수정에 실패했습니다.' });
             }
         }
     });
@@ -961,128 +1119,110 @@ function updateReview(reviewNo) {
 
 /* ── 리뷰 삭제 ── */
 function deleteReview(reviewNo) {
-    if (!confirm('리뷰를 삭제하시겠습니까?')) return;
-    $.ajax({
-        url: ctp + '/review/delete',
-        type: 'POST',
-        data: { reviewNo: reviewNo },
-        success: function(res) {
-            if (res == 'ok') {
-                alert('리뷰가 삭제되었습니다.');
-                location.reload();
-            } else {
-                alert('삭제에 실패했습니다.');
+    Swal.fire({
+        icon: 'warning', title: '리뷰 삭제',
+        text: '리뷰를 삭제하시겠습니까?',
+        showCancelButton: true,
+        confirmButtonText: '삭제', cancelButtonText: '취소',
+        confirmButtonColor: '#e50914'
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+        $.ajax({
+            url: ctp + '/review/delete', type: 'POST',
+            data: { reviewNo: reviewNo },
+            success: function(res) {
+                if (res == 'ok') {
+                    Swal.fire({ icon: 'success', title: '삭제 완료', timer: 1200, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else if (res == 'auth') {
+                    Swal.fire({ icon: 'error', title: '권한 없음', text: '삭제 권한이 없습니다.' });
+                } else {
+                    Swal.fire({ icon: 'error', title: '삭제 실패', text: '삭제에 실패했습니다.' });
+                }
             }
-        }
+        });
     });
 }
 
-/* ── 전체 리뷰 목록 불러오기 ── */
+/* ── 리뷰 목록 ── */
 function loadReviews() {
     $.ajax({
-        url: ctp + '/review/list',
-        type: 'GET',
+        url: ctp + '/review/list', type: 'GET',
         data: { movieNo: tmdbId },
-        success: function(list) {
-            var html = '';
-            if (list.length == 0) {
-                html = '<div class="empty-card"><p class="text-secondary mb-0">아직 작성된 리뷰가 없습니다.</p></div>';
-            } else {
-                var loginUserNo = ${not empty sessionScope.loginUser ? sessionScope.loginUser.userNo : 0};
-                list.forEach(function(r) {
-                    var stars = '';
-                    for (var i = 1; i <= 5; i++) {
-                        stars += i <= r.rating ?
-                            '<span class="text-warning">★</span>' :
-                            '<span class="text-secondary">★</span>';
-                    }
-
-                    var userInitial = r.userName ? r.userName.substring(0,1) : '?';
-
-                    html += '<div class="review-item">';
-                    html += '<div class="review-header">';
-                    html += '<div class="review-user">';
-                    html += '<div class="avatar-circle">' + userInitial + '</div>';
-                    html += '<div>';
-                    html += '<div class="fw-bold">' + r.userName + '</div>';
-                    html += '<div class="review-stars">';
-                    html += stars;
-                    html += '<span class="text-secondary small ms-2">' + r.rating + '점</span>';
-                    html += '</div>';
-                    html += '</div>';
-                    html += '</div>';
-                    html += '<small class="text-secondary">' + r.regDate + '</small>';
-                    html += '</div>';
-
-                    if (r.spoiler == 1) {
-                        html += '<div class="spoiler-badge mb-3"><i class="fa fa-exclamation-triangle"></i> 스포일러 포함</div>';
-                    }
-
-                    html += '<div class="review-body">' + r.content + '</div>';
-
-                    html += '<div class="review-actions">';
-                    if (loginUserNo != 0 && r.userNo == loginUserNo) {
-                        html += '<button class="btn btn-outline-secondary btn-sm like-self" disabled>';
-                        html += '<i class="fa fa-thumbs-up"></i>';
-                        html += ' <span class="like-cnt">' + r.likeCnt + '</span>';
-                        html += ' <small>(내 리뷰)</small></button>';
-                    } else {
-                        html += '<button class="btn btn-outline-secondary btn-sm"';
-                        html += ' onclick="toggleLike(' + r.reviewNo + ', this)">';
-                        html += '<i class="fa fa-thumbs-up"></i>';
-                        html += ' <span class="like-cnt">' + r.likeCnt + '</span>';
-                        html += '</button>';
-                    }
-                    html += '</div>';
-
-                    html += '<div class="comment-area">';
-                    html += '<div id="commentList-' + r.reviewNo + '" class="mb-2"></div>';
-
-                    if (loginUserNo != 0) {
-                        html += '<div class="input-group input-group-sm">';
-                        html += '<input type="text" class="form-control bg-secondary text-white border-0"';
-                        html += ' id="commentInput-' + r.reviewNo + '"';
-                        html += ' placeholder="댓글을 입력하세요..." maxlength="500">';
-                        html += '<button class="btn btn-outline-success btn-sm"';
-                        html += ' onclick="writeComment(' + r.reviewNo + ')">등록</button>';
-                        html += '</div>';
-                    }
-                    html += '</div>';
-                    html += '</div>';
-
-                    loadComments(r.reviewNo);
-                });
-            }
-            $('#reviewList').html(html);
-        }
+        success: function(list) { renderReviews(list); }
     });
 }
 
-/* ── 댓글 목록 로드 ── */
+/* ── 리뷰 렌더링 (정렬 공용) ── */
+function renderReviews(list) {
+    var html = '';
+    if (list.length == 0) {
+        html = '<div class="empty-card"><p class="text-secondary mb-0">아직 작성된 리뷰가 없습니다.</p></div>';
+    } else {
+        list.forEach(function(r) {
+            var stars = '';
+            for (var i = 1; i <= 5; i++) {
+                stars += i <= r.rating ? '<span class="text-warning">★</span>' : '<span class="text-secondary">★</span>';
+            }
+            var userInitial = r.userName ? r.userName.substring(0,1) : '?';
+            html += '<div class="review-item">';
+            html += '<div class="review-header">';
+            html += '<div class="review-user">';
+            html += '<div class="avatar-circle">' + userInitial + '</div>';
+            html += '<div><div class="fw-bold">' + r.userName + '</div>';
+            html += '<div class="review-stars">' + stars;
+            html += '<span class="text-secondary small ms-2">' + r.rating + '점</span></div></div></div>';
+            html += '<small class="text-secondary">' + r.regDate + '</small></div>';
+            if (r.spoiler == 1) {
+                html += '<div class="spoiler-badge mb-3"><i class="fa fa-exclamation-triangle"></i> 스포일러 포함</div>';
+            }
+            html += '<div class="review-body">' + r.content + '</div>';
+            html += '<div class="review-actions">';
+            if (loginUserNo != 0 && r.userNo == loginUserNo) {
+                html += '<button class="btn btn-outline-secondary btn-sm like-self" disabled>';
+                html += '<i class="fa fa-thumbs-up"></i> <span class="like-cnt">' + r.likeCnt + '</span>';
+                html += ' <small>(내 리뷰)</small></button>';
+            } else {
+                html += '<button class="btn btn-outline-secondary btn-sm" onclick="toggleLike(' + r.reviewNo + ', this)">';
+                html += '<i class="fa fa-thumbs-up"></i> <span class="like-cnt">' + r.likeCnt + '</span></button>';
+                if (loginUserNo != 0) {
+                    html += '<button class="btn btn-outline-danger btn-sm ms-1" onclick="reportReview(' + r.reviewNo + ')">';
+                    html += '<i class="fa fa-flag"></i></button>';
+                }
+            }
+            html += '</div>';
+            html += '<div class="comment-area"><div id="commentList-' + r.reviewNo + '" class="mb-2"></div>';
+            if (loginUserNo != 0) {
+                html += '<div class="input-group input-group-sm">';
+                html += '<input type="text" class="form-control bg-secondary text-white border-0" id="commentInput-' + r.reviewNo + '" placeholder="댓글을 입력하세요..." maxlength="500">';
+                html += '<button class="btn btn-outline-success btn-sm" onclick="writeComment(' + r.reviewNo + ')">등록</button></div>';
+            }
+            html += '</div></div>';
+            loadComments(r.reviewNo);
+        });
+    }
+    $('#reviewList').html(html);
+}
+
+/* ── 댓글 목록 ── */
 function loadComments(reviewNo) {
     $.ajax({
-        url: ctp + '/comment/list',
-        type: 'GET',
+        url: ctp + '/comment/list', type: 'GET',
         data: { reviewNo: reviewNo },
         success: function(list) {
             var html = '';
-            var loginUserNo = ${not empty sessionScope.loginUser ? sessionScope.loginUser.userNo : 0};
-
             list.forEach(function(c) {
                 html += '<div class="comment-item" id="comment-' + c.commentNo + '">';
                 html += '<div class="comment-main">';
                 html += '<span class="comment-author">' + c.userName + '</span>';
                 html += '<span class="comment-text" id="commentText-' + c.commentNo + '">' + c.content + '</span>';
-                html += '</div>';
-                html += '<div class="d-flex gap-2">';
+                html += '</div><div class="d-flex gap-2">';
                 if (loginUserNo != 0 && c.userNo == loginUserNo) {
                     html += '<span class="comment-link" onclick="editComment(' + c.commentNo + ')">수정</span>';
                     html += '<span class="comment-link" onclick="deleteComment(' + c.commentNo + ', ' + reviewNo + ')">삭제</span>';
                 }
-                html += '</div>';
-                html += '</div>';
+                html += '</div></div>';
             });
-
             $('#commentList-' + reviewNo).html(html);
         }
     });
@@ -1091,19 +1231,20 @@ function loadComments(reviewNo) {
 /* ── 댓글 등록 ── */
 function writeComment(reviewNo) {
     var content = $('#commentInput-' + reviewNo).val();
-    if (!content.trim()) { alert('댓글 내용을 입력해주세요.'); return; }
-
+    if (!content.trim()) {
+        Swal.fire({ icon: 'warning', title: '내용 필요', text: '댓글 내용을 입력해주세요.', timer: 1500, showConfirmButton: false });
+        return;
+    }
     $.ajax({
-        url: ctp + '/comment/write',
-        type: 'POST',
+        url: ctp + '/comment/write', type: 'POST',
         data: { reviewNo: reviewNo, content: content },
         success: function(res) {
             if (res == 'ok') {
                 $('#commentInput-' + reviewNo).val('');
                 loadComments(reviewNo);
             } else if (res == 'login') {
-                alert('로그인이 필요합니다.');
-                location.href = ctp + '/user/login';
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                    .then(() => location.href = ctp + '/user/login');
             }
         }
     });
@@ -1112,54 +1253,64 @@ function writeComment(reviewNo) {
 /* ── 댓글 수정 ── */
 function editComment(commentNo) {
     var current = $('#commentText-' + commentNo).text();
-    var newContent = prompt('댓글 수정', current);
-    if (!newContent || !newContent.trim()) return;
-
-    $.ajax({
-        url: ctp + '/comment/update',
-        type: 'POST',
-        data: { commentNo: commentNo, content: newContent },
-        success: function(res) {
-            if (res == 'ok') {
-                $('#commentText-' + commentNo).text(newContent);
+    Swal.fire({
+        title: '댓글 수정', input: 'textarea',
+        inputValue: current, inputPlaceholder: '댓글 내용을 입력하세요.',
+        inputAttributes: { maxlength: 500 },
+        showCancelButton: true,
+        confirmButtonText: '수정', cancelButtonText: '취소',
+        customClass: { input: 'bg-dark text-white' }
+    }).then(function(result) {
+        if (!result.isConfirmed || !result.value.trim()) return;
+        $.ajax({
+            url: ctp + '/comment/update', type: 'POST',
+            data: { commentNo: commentNo, content: result.value },
+            success: function(res) {
+                if (res == 'ok') {
+                    $('#commentText-' + commentNo).text(result.value);
+                } else {
+                    Swal.fire({ icon: 'error', title: '수정 실패', timer: 1200, showConfirmButton: false });
+                }
             }
-        }
+        });
     });
 }
 
 /* ── 댓글 삭제 ── */
 function deleteComment(commentNo, reviewNo) {
-    if (!confirm('댓글을 삭제하시겠습니까?')) return;
-    $.ajax({
-        url: ctp + '/comment/delete',
-        type: 'POST',
-        data: { commentNo: commentNo },
-        success: function(res) {
-            if (res == 'ok') {
-                $('#comment-' + commentNo).remove();
+    Swal.fire({
+        icon: 'warning', title: '댓글 삭제', text: '댓글을 삭제하시겠습니까?',
+        showCancelButton: true,
+        confirmButtonText: '삭제', cancelButtonText: '취소',
+        confirmButtonColor: '#e50914'
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+        $.ajax({
+            url: ctp + '/comment/delete', type: 'POST',
+            data: { commentNo: commentNo },
+            success: function(res) {
+                if (res == 'ok') $('#comment-' + commentNo).remove();
+                else Swal.fire({ icon: 'error', title: '삭제 실패', timer: 1200, showConfirmButton: false });
             }
-        }
+        });
     });
 }
 
 /* ── 찜하기 ── */
 function toggleWatchlist() {
     $.ajax({
-        url: ctp + '/movie/watchlist',
-        type: 'POST',
+        url: ctp + '/movie/watchlist', type: 'POST',
         data: { tmdbId: tmdbId },
         success: function(res) {
             if (res == 'ok') {
-                $('#watchBtn').removeClass('btn-outline-success')
-                              .addClass('btn-success')
+                $('#watchBtn').removeClass('btn-outline-success').addClass('btn-success')
                               .html('<i class="fa fa-heart"></i> 찜 완료');
             } else if (res == 'cancel') {
-                $('#watchBtn').removeClass('btn-success')
-                              .addClass('btn-outline-success')
+                $('#watchBtn').removeClass('btn-success').addClass('btn-outline-success')
                               .html('<i class="fa fa-heart"></i> 보고싶어요');
             } else if (res == 'login') {
-                alert('로그인이 필요합니다.');
-                location.href = ctp + '/user/login';
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                    .then(() => location.href = ctp + '/user/login');
             }
         }
     });
@@ -1170,33 +1321,139 @@ function toggleLike(reviewNo, btn) {
     <c:choose>
         <c:when test="${not empty sessionScope.loginUser}">
         $.ajax({
-            url: ctp + '/review/like',
-            type: 'POST',
+            url: ctp + '/review/like', type: 'POST',
             data: { reviewNo: reviewNo },
             success: function(res) {
                 if (res == 'ok') {
                     var cnt = parseInt($(btn).find('.like-cnt').text());
                     $(btn).find('.like-cnt').text(cnt + 1);
-                    $(btn).removeClass('btn-outline-secondary')
-                          .addClass('btn-warning');
+                    $(btn).removeClass('btn-outline-secondary').addClass('btn-warning');
                 } else if (res == 'cancel') {
                     var cnt = parseInt($(btn).find('.like-cnt').text());
                     $(btn).find('.like-cnt').text(cnt - 1);
-                    $(btn).removeClass('btn-warning')
-                          .addClass('btn-outline-secondary');
+                    $(btn).removeClass('btn-warning').addClass('btn-outline-secondary');
                 } else if (res == 'login') {
-                    alert('로그인이 필요합니다.');
-                    location.href = ctp + '/user/login';
+                    Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                        .then(() => location.href = ctp + '/user/login');
                 }
             }
         });
         </c:when>
         <c:otherwise>
-        alert('로그인이 필요합니다.');
-        location.href = ctp + '/user/login';
+        Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+            .then(() => location.href = ctp + '/user/login');
         </c:otherwise>
     </c:choose>
 }
+
+/* ── 컬렉션 모달 열기 ── */
+function openCollectionModal() {
+    var modal = new bootstrap.Modal(document.getElementById('collectionModal'));
+    modal.show();
+    $.get(ctp + '/collection/my', function(list) {
+        if (list.length === 0) {
+            $('#collectionModalBody').html(
+                '<p class="text-secondary text-center">컬렉션이 없습니다. ' +
+                '<a href="' + ctp + '/collection/list" class="text-warning">만들러 가기</a></p>'
+            );
+            return;
+        }
+        var html = '<div class="list-group">';
+        list.forEach(function(c) {
+            html += '<button class="list-group-item list-group-item-action bg-dark text-white border-secondary"';
+            html += ' onclick="addToCollection(' + c.collectionId + ', this)">';
+            html += '<div class="d-flex justify-content-between align-items-center">';
+            html += '<span>' + c.title + '</span>';
+            html += '<span class="col-check"></span>';
+            html += '<small class="text-secondary ms-2">' + c.movieCount + '편</small>';
+            html += '</div></button>';
+        });
+        html += '</div>';
+        $('#collectionModalBody').html(html);
+    }, 'json');
+}
+
+/* ── 컬렉션 영화 추가/제거 ── */
+function addToCollection(collectionId, btn) {
+    $.post(ctp + '/collection/movie/toggle',
+        { collectionId: collectionId, movieId: tmdbId },
+        function(res) {
+            if (res.status === 'added') {
+                $(btn).addClass('active');
+                $(btn).find('.col-check').text(' ✓');
+            } else if (res.status === 'removed') {
+                $(btn).removeClass('active');
+                $(btn).find('.col-check').text('');
+            } else if (res.status === 'login') {
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' });
+            }
+        }, 'json');
+}
+
+/* ── 리뷰 신고 ── */
+function reportReview(reviewNo) {
+    document.getElementById('reportTargetId').value = reviewNo;
+    document.getElementById('reportReason').value = '';
+    new bootstrap.Modal(document.getElementById('reportModal')).show();
+}
+
+function submitReport() {
+    var targetId = document.getElementById('reportTargetId').value;
+    var reason   = document.getElementById('reportReason').value.trim();
+    if (!reason) {
+        Swal.fire({ icon: 'warning', title: '사유 필요', text: '신고 사유를 입력해주세요.' });
+        return;
+    }
+    $.post(ctp + '/report/insert',
+        { targetType: 'REVIEW', targetId: targetId, reason: reason },
+        function(res) {
+            document.activeElement.blur();
+            var modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+            modal.hide();
+            if (res.status === 'ok') {
+                Swal.fire({ icon: 'success', title: '신고 접수', text: '신고가 접수되었습니다.', timer: 1500, showConfirmButton: false });
+            } else if (res.status === 'dup') {
+                Swal.fire({ icon: 'info', title: '중복 신고', text: '이미 신고한 리뷰입니다.' });
+            } else if (res.status === 'login') {
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' });
+            } else {
+                Swal.fire({ icon: 'error', title: '신고 실패', text: '신고 접수에 실패했습니다.' });
+            }
+        }, 'json');
+}
+function toggleWatched() {
+    $.post(ctp + '/movie/watched/toggle', { movieNo: tmdbId }, function(res) {
+        if (res.status === 'added') {
+            $('#watchedBtn').removeClass('btn-outline-info').addClass('btn-info');
+            $('#watchedBtnText').text('봤어요 ✓');
+        } else if (res.status === 'removed') {
+            $('#watchedBtn').removeClass('btn-info').addClass('btn-outline-info');
+            $('#watchedBtnText').text('봤어요');
+        } else if (res.status === 'login') {
+            Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                .then(() => location.href = ctp + '/user/login');
+        }
+    }, 'json');
+}
+function sortReviews(sort, btn) {
+    currentSort = sort;
+    // 탭 스타일 전환
+    document.querySelectorAll('.sort-btn').forEach(function(b) {
+        b.style.background = 'rgba(255,255,255,0.08)';
+        b.style.color = '#aaa';
+        b.style.border = '1px solid rgba(255,255,255,0.15)';
+    });
+    btn.style.background = '#28a745';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+
+    $.get(ctp + '/review/list/sorted',
+        { movieNo: tmdbId, sort: sort },
+        function(list) {
+            renderReviews(list);
+        }, 'json');
+}
 </script>
+
 </body>
 </html>

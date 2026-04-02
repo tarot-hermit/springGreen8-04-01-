@@ -263,6 +263,7 @@
       }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
@@ -337,49 +338,61 @@
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
 
+
 <script>
-/* ── 인증코드 발송 ── */
+var Toast = Swal.mixin({
+    toast: true, position: 'top-end',
+    showConfirmButton: false, timer: 2000, timerProgressBar: true
+});
+
 function sendCode() {
     var email = $('#userEmail').val();
-    if (!email) { alert('이메일을 입력해주세요.'); return; }
-
-    $('#emailMsg').html('<span class="text-info">인증코드 발송 중...</span>');
+    if (!email) {
+        Swal.fire({ icon: 'warning', title: '이메일 필요', text: '이메일을 입력해주세요.' });
+        return;
+    }
+    Swal.fire({
+        title: '인증코드 발송 중...', text: '잠시만 기다려주세요.',
+        allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }
+    });
     $.ajax({
-        url: '${ctp}/user/findId/sendCode',
-        type: 'POST',
+        url: '${ctp}/user/findId/sendCode', type: 'POST',
         data: { userEmail: email },
         success: function(res) {
+            Swal.close();
             if (res == 'ok') {
-                $('#emailMsg').html('<span class="text-info">인증코드가 발송되었습니다. 5분 내 입력해주세요.</span>');
+                $('#emailMsg').html('<span class="text-info">✓ 인증코드가 발송되었습니다. 5분 내 입력해주세요.</span>');
+                Toast.fire({ icon: 'success', title: '인증코드가 발송되었습니다.' });
             } else if (res == 'notFound') {
                 $('#emailMsg').html('');
                 $('#step1').hide();
                 $('#stepFail').show();
             } else {
-                $('#emailMsg').html('<span class="text-danger">발송에 실패했습니다. 다시 시도해주세요.</span>');
+                Swal.fire({ icon: 'error', title: '발송 실패', text: '다시 시도해주세요.' });
             }
         }
     });
 }
 
-/* ── 인증코드 확인 ── */
 function checkCode() {
     var code = $('#emailCode').val();
-    if (!code) { alert('인증코드를 입력해주세요.'); return; }
-
+    if (!code) {
+        Swal.fire({ icon: 'warning', title: '코드 필요', text: '인증코드를 입력해주세요.' });
+        return;
+    }
     $.ajax({
-        url: '${ctp}/user/findId/checkCode',
-        type: 'POST',
+        url: '${ctp}/user/findId/checkCode', type: 'POST',
         data: { code: code },
         success: function(res) {
             if (res != 'fail') {
-                // res 에 아이디가 담겨옴
-                $('#codeMsg').html('<span class="text-success">인증이 완료되었습니다.</span>');
+                $('#codeMsg').html('<span class="text-success">✓ 인증이 완료되었습니다.</span>');
                 $('#step1').hide();
                 $('#foundId').text(res);
                 $('#step2').show();
+                Toast.fire({ icon: 'success', title: '인증 완료!' });
             } else {
                 $('#codeMsg').html('<span class="text-danger">인증코드가 올바르지 않습니다.</span>');
+                Swal.fire({ icon: 'error', title: '인증 실패', text: '인증코드가 올바르지 않습니다.' });
             }
         }
     });
