@@ -26,9 +26,10 @@
     </select>
 
     <!-- 검색어 단건 삭제 -->
-    <delete id="deleteSearch" parameterType="int">
+    <delete id="deleteSearch">
         DELETE FROM search_history
         WHERE search_no = #{searchNo}
+          AND user_no = #{userNo}
     </delete>
 
     <!-- 전체 삭제 -->

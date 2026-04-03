@@ -44,6 +44,7 @@
         UPDATE notification
         SET is_read = 1
         WHERE noti_id = #{notiId}
+          AND receiver_mid = #{receiverMid}
     </update>
 
     <!-- 전체 읽음 -->

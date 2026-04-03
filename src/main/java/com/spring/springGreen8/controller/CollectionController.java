@@ -111,12 +111,17 @@ public class CollectionController {
         Map<String, Object> result = new HashMap<>();
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
         if (loginUser == null) { result.put("status", "login"); return result; }
+        if (title == null || title.trim().isEmpty() || title.length() > 100) {
+            result.put("status", "fail");
+            result.put("msg", "제목은 1자 이상 100자 이하로 입력해주세요.");
+            return result;
+        }
 
         CollectionVO vo = new CollectionVO();
         vo.setCollectionId(collectionId);
         vo.setMid(loginUser.getUserId());
         vo.setTitle(title.trim());
-        vo.setDescription(description.trim());
+        vo.setDescription(description == null ? "" : description.trim());
         vo.setIsPublic(isPublic);
 
         int res = collectionService.updateCollection(vo);

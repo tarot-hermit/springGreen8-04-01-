@@ -79,10 +79,9 @@ document.querySelectorAll('img[data-tmdb]').forEach(function(img) {
     .then(function(r) { return r.text(); })
     .catch(function() {});
   // TMDB API 직접 호출로 포스터만 가져오기
-  var apiUrl = 'https://api.themoviedb.org/3/movie/' + id
-             + '?api_key=66da9cfe880193a0b0b756b8fb46a5a3&language=ko-KR';
+  var apiUrl = ctp + '/movie/api/' + id;
   fetch(apiUrl).then(r => r.json()).then(function(d) {
-    if (d.poster_path) img.src = TMDB_IMG + d.poster_path;
+    if (d.posterPath) img.src = TMDB_IMG + d.posterPath;
     var titleEl = document.getElementById('mt-' + id);
     if (titleEl && d.title) titleEl.textContent = d.title;
   });

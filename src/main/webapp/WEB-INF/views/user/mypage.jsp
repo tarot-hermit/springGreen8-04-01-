@@ -325,8 +325,6 @@
 <script>
 var ctp = '${ctp}';
 var TMDB_IMG = 'https://image.tmdb.org/t/p/w200';
-var TMDB_API = 'https://api.themoviedb.org/3/movie/';
-var TMDB_KEY = '66da9cfe880193a0b0b756b8fb46a5a3';
 var watchedLoaded = false, colLoaded = false;
 
 /* ── 탭 전환 ── */
@@ -380,10 +378,10 @@ function loadWatched() {
         $('img[data-tmdb]').each(function() {
             var id = $(this).data('tmdb');
             var imgEl = this;
-            fetch(TMDB_API + id + '?api_key=' + TMDB_KEY + '&language=ko-KR')
+            fetch(ctp + '/movie/api/' + id)
                 .then(function(r) { return r.json(); })
                 .then(function(d) {
-                    if (d.poster_path) imgEl.src = TMDB_IMG + d.poster_path;
+                    if (d.posterPath) imgEl.src = TMDB_IMG + d.posterPath;
                     var t = document.getElementById('wt-' + id);
                     if (t && d.title) t.textContent = d.title;
                 });
