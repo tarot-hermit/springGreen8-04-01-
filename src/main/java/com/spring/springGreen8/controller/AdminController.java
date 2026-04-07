@@ -21,6 +21,11 @@ import com.spring.springGreen8.vo.UserVO;
 @RequestMapping("/admin")
 public class AdminController {
 
+    private static final String BLIND_REVIEW_MESSAGE_ASCII =
+            "\uC2E0\uACE0\uB85C \uC778\uD574 \uBE14\uB77C\uC778\uB4DC \uCC98\uB9AC\uB41C \uB9AC\uBDF0\uC785\uB2C8\uB2E4.";
+
+    private static final String BLINDED_REVIEW_MESSAGE = "신고로 인해 블라인드 처리된 리뷰입니다.";
+
     @Autowired
     private AdminDAO adminDAO;
     
@@ -82,7 +87,7 @@ public class AdminController {
     public String reportList(Model model) {
         List<ReportVO> reports = adminDAO.getAllReports();
         model.addAttribute("reports", reports);
-        return "admin/reportList";
+        return "admin/reportListV2";
     }
 
     // 신고 상태 변경 Ajax
@@ -90,6 +95,16 @@ public class AdminController {
     @ResponseBody
     public String updateReportStatus(@RequestParam int reportId,
                                      @RequestParam String status) {
+        if ("PROCESSED".equalsIgnoreCase(status)) {
+            ReportVO report = adminDAO.getReportById(reportId);
+            if (report == null) return "fail";
+
+            if ("REVIEW".equalsIgnoreCase(report.getTargetType())) {
+                int blindResult = adminDAO.blindReview(report.getTargetId(), BLIND_REVIEW_MESSAGE_ASCII);
+                if (blindResult <= 0) return "fail";
+            }
+        }
+
         int result = adminDAO.updateReportStatus(reportId, status);
         return result > 0 ? "ok" : "fail";
     }

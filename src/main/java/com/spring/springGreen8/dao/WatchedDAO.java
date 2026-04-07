@@ -8,17 +8,17 @@ import com.spring.springGreen8.vo.WatchedVO;
 @Mapper
 public interface WatchedDAO {
 
-    // ºÃ¾î¿ä Ãß°¡
+    // ë´¤ì–´ìš” ì¶”ê°€
     int insertWatched(WatchedVO vo);
 
-    // ºÃ¾î¿ä Ãë¼Ò
+    // ë´¤ì–´ìš” ì·¨ì†Œ
     int deleteWatched(@Param("mid")     String mid,
                       @Param("movieId") int movieId);
 
-    // ºÃ¾î¿ä ¿©ºÎ È®ÀÎ (1: ÀÖÀ½, 0: ¾øÀ½)
+    // ë´¤ì–´ìš” ì—¬ë¶€ í™•ì¸ (1: ìˆìŒ, 0: ì—†ìŒ)
     int checkWatched(@Param("mid")     String mid,
                      @Param("movieId") int movieId);
 
-    // ³»°¡ ºÃ¾î¿ä ÇÑ ¿µÈ­ ¸ñ·Ï
+    // ë‚´ê°€ ë´¤ì–´ìš” í•œ ì˜í™” ëª©ë¡
     List<WatchedVO> selectMyWatched(@Param("mid") String mid);
 }

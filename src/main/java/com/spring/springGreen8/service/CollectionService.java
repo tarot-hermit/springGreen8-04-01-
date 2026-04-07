@@ -10,7 +10,7 @@ public interface CollectionService {
     CollectionVO getCollectionById(int collectionId);
     int updateCollection(CollectionVO vo);
     int deleteCollection(int collectionId, String mid);
-    // øµ»≠ √ﬂ∞°/¡¶∞≈ ≈‰±€ °Ê "added" | "removed"
+    // ÏòÅÌôî Ï∂îÍ∞Ä/Ï†úÍ±∞ ÌÜ†Í∏Ä ‚Üí "added" | "removed"
     String toggleCollectionMovie(int collectionId, int movieId);
     boolean isMovieInCollection(int collectionId, int movieId);
     List<Integer> getMovieIds(int collectionId);

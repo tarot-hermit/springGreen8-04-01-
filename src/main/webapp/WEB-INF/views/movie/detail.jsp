@@ -1,7 +1,30 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
+<c:set var="backListUrl" value="${ctp}/movie/list"/>
+<c:set var="backListLabel" value="영화 목록"/>
+<c:if test="${not empty param.country}">
+  <c:set var="backListUrl" value="${backListUrl}?country=${param.country}"/>
+</c:if>
+<c:if test="${param.from == 'animation'}">
+  <c:set var="backListUrl" value="${ctp}/movie/animation"/>
+  <c:if test="${not empty param.country}">
+    <c:set var="backListUrl" value="${backListUrl}?country=${param.country}"/>
+  </c:if>
+  <c:set var="backListLabel" value="애니 목록"/>
+</c:if>
+<c:if test="${param.from == 'all'}">
+  <c:set var="backListUrl" value="${ctp}/movie/all"/>
+  <c:if test="${not empty param.country}">
+    <c:set var="backListUrl" value="${backListUrl}?country=${param.country}"/>
+  </c:if>
+  <c:set var="backListLabel" value="전체 목록"/>
+</c:if>
+<c:if test="${param.from == 'genre' and not empty param.genreId}">
+  <c:set var="backListUrl" value="${ctp}/movie/genre?genreId=${param.genreId}&genreName=${param.genreName}&page=${empty param.page ? 1 : param.page}"/>
+  <c:set var="backListLabel" value="장르 목록"/>
+</c:if>
 <!DOCTYPE html>
 <html>
 <head>
@@ -255,6 +278,18 @@
       font-weight: 600;
     }
 
+    .review-body.blind-review {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(244,63,94,0.12);
+      border: 1px solid rgba(244,63,94,0.28);
+      color: #fecdd3;
+      font-weight: 700;
+    }
+
     .form-label {
       font-weight: 600;
       color: #e9ecef !important;
@@ -452,6 +487,36 @@
       color: #fff;
     }
 
+    .provider-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .provider-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .provider-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .provider-type {
+      color: var(--sg-text-muted);
+      font-size: 0.8rem;
+    }
+
     @media (max-width: 991px) {
       .section-shell {
         margin-top: -20px;
@@ -516,7 +581,7 @@
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
 
 <div class="detail-page">
-  <!-- 히어로 영역 -->
+  <!-- ?덉뼱濡??곸뿭 -->
   <div class="backdrop">
     <div class="container hero-content">
       <div class="row align-items-end g-4">
@@ -553,6 +618,24 @@
             </c:if>
           </div>
 
+          <c:if test="${not empty watchProviders}">
+            <div class="provider-list">
+              <c:forEach var="provider" items="${watchProviders}">
+                <div class="provider-badge">
+                  <img src="https://image.tmdb.org/t/p/w92${provider.logoPath}"
+                       alt="${provider.providerName}"
+                       class="provider-logo"
+                       onerror="this.style.display='none'">
+                  <div>
+                    <div class="fw-bold small">${provider.providerName}</div>
+                    <div class="provider-type">${provider.providerType}</div>
+                  </div>
+                </div>
+              </c:forEach>
+            </div>
+            <div class="text-secondary small mt-2">KR 기준 OTT 정보, source: TMDB / JustWatch</div>
+          </c:if>
+
           <div class="action-group d-flex flex-wrap gap-2">
 			  <c:if test="${not empty sessionScope.loginUser}">
 			    <button class="btn me-0 ${not empty myWatch ? 'btn-success' : 'btn-outline-success'}"
@@ -566,13 +649,13 @@
 				    <i class="fa fa-eye"></i> <span id="watchedBtnText">봤어요</span>
 				  </button>
 				</c:if>
-			    <%-- 컬렉션 추가 버튼 --%>
+			    <%-- 而щ젆??異붽? 踰꾪듉 --%>
 			    <button class="btn btn-outline-warning" onclick="openCollectionModal()">
 			      <i class="fa fa-folder-open"></i> 컬렉션에 추가
 			    </button>
 			  </c:if>
-			  <a href="${ctp}/movie/list" class="btn btn-soft-secondary">
-			    <i class="fa fa-arrow-left me-1"></i> 목록으로
+			  <a href="${backListUrl}" class="btn btn-soft-secondary">
+			    <i class="fa fa-arrow-left me-1"></i> ${backListLabel}
 			  </a>
 			</div>
         </div>
@@ -580,7 +663,7 @@
     </div>
   </div>
 
-  <!-- 본문 -->
+  <!-- 蹂몃Ц -->
   <div class="container section-shell pb-5">
     <div class="row g-4">
       <div class="col-lg-8">
@@ -602,7 +685,7 @@
 		  <div id="ratingStatsInner"></div>
 		</div>
         
-		<%-- ① 예고편 --%>
+		<%-- ???덇퀬??--%>
 		<c:if test="${not empty videos}">
 		<div class="content-card mb-4">
 		  <h4 class="section-title">예고편 / 영상</h4>
@@ -623,7 +706,7 @@
 		</div>
 		</c:if>
 		
-		<%-- ② 출연진 --%>
+		<%-- ??異쒖뿰吏?--%>
 		<c:if test="${not empty cast}">
 			<div class="content-card mb-4">
 			  <h4 class="section-title">출연진</h4>
@@ -655,7 +738,7 @@
 			</div>
 			</c:if>
 		
-		<%-- ③ 스태프 --%>
+		<%-- ???ㅽ깭??--%>
 		<c:if test="${not empty crew}">
 		<div class="content-card mb-4">
 		  <h4 class="section-title">스태프</h4>
@@ -692,7 +775,7 @@
             <c:when test="${not empty sessionScope.loginUser}">
               <c:choose>
 
-                <%-- 이미 리뷰 작성한 경우 --%>
+                <%-- ?대? 由щ럭 ?묒꽦??寃쎌슦 --%>
                 <c:when test="${not empty myReview}">
                   <div class="review-card mb-4" id="myReviewBox">
                     <div class="my-review-top">
@@ -709,7 +792,7 @@
                                 <span class="text-warning fs-5">★</span>
                               </c:when>
                               <c:otherwise>
-                                <span class="text-secondary fs-5">★</span>
+                                <span class="text-secondary fs-5">☆</span>
                               </c:otherwise>
                             </c:choose>
                           </c:forEach>
@@ -733,7 +816,7 @@
                     <div class="review-body mb-0">${myReview.content}</div>
                   </div>
 
-                  <!-- 수정 폼 -->
+                  <!-- ?섏젙 ??-->
                   <div class="review-card mb-4" id="editForm" style="display:none;">
                     <div class="mb-3">
                       <label class="form-label">별점 수정</label>
@@ -768,7 +851,7 @@
                   </div>
                 </c:when>
 
-                <%-- 리뷰 미작성 --%>
+                <%-- 由щ럭 誘몄옉??--%>
                 <c:otherwise>
                   <div class="review-card mb-4">
                     <div class="mb-3">
@@ -821,9 +904,9 @@
 		      <button class="btn btn-sm sort-btn active" onclick="sortReviews('latest', this)"
 		              style="border-radius:999px;font-size:12px;font-weight:700;background:#28a745;color:#fff;border:none;">최신순</button>
 		      <button class="btn btn-sm sort-btn" onclick="sortReviews('rating_high', this)"
-		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">별점높은순</button>
+		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">평점 높은순</button>
 		      <button class="btn btn-sm sort-btn" onclick="sortReviews('rating_low', this)"
-		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">별점낮은순</button>
+		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">평점 낮은순</button>
 		      <button class="btn btn-sm sort-btn" onclick="sortReviews('like', this)"
 		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">공감순</button>
 		    </div>
@@ -840,7 +923,7 @@
 		  <h4 class="section-title">비슷한 영화</h4>
 		  <div class="row g-3" id="similarList"></div>
 		</div>
-      <!-- 오른쪽 정보 -->
+      <!-- ?ㅻⅨ履??뺣낫 -->
       <div class="col-lg-4">
         <div class="info-card">
           <div class="info-title">영화 정보</div>
@@ -870,13 +953,26 @@
               <td>TMDB 평점</td>
               <td class="text-warning fw-bold">★ ${movie.voteAverage}</td>
             </tr>
+            <tr>
+              <td>OTT</td>
+              <td>
+                <c:choose>
+                  <c:when test="${not empty watchProviders}">
+                    <c:forEach var="provider" items="${watchProviders}" varStatus="st">
+                      ${provider.providerName}<c:if test="${not st.last}">, </c:if>
+                    </c:forEach>
+                  </c:when>
+                  <c:otherwise>-</c:otherwise>
+                </c:choose>
+              </td>
+            </tr>
           </table>
         </div>
       </div>
     </div>
   </div>
 </div>
-<%-- 컬렉션 추가 모달 --%>
+<%-- 而щ젆??異붽? 紐⑤떖 --%>
 <c:if test="${not empty sessionScope.loginUser}">
 <div class="modal fade" id="collectionModal" tabindex="-1">
   <div class="modal-dialog">
@@ -886,7 +982,7 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="collectionModalBody">
-        <div class="text-center py-3 text-secondary">불러오는 중...</div>
+        <div class="text-center py-3 text-secondary">불러오는 중..</div>
       </div>
       <div class="modal-footer" style="border-color:rgba(255,255,255,0.1);">
         <a href="${ctp}/collection/list" class="btn btn-outline-secondary btn-sm">
@@ -938,7 +1034,7 @@ $(document).ready(function() {
     loadReviews();
     setEditRating(editRating);
 
-    // ── textarea 실시간 체크 ──
+    // ?? textarea ?ㅼ떆媛?泥댄겕 ??
     $('#content').on('input', function() {
         var len = $(this).val().trim().length;
         $('#contentCount').text(len + ' / 2000');
@@ -949,19 +1045,19 @@ $(document).ready(function() {
         } else if (len > 2000) {
             $('#contentMsg').html('<span class="text-danger">2000자를 초과했습니다.</span>');
         } else {
-            $('#contentMsg').html('<span class="text-success">✓ 작성 가능합니다.</span>');
+            $('#contentMsg').html('<span class="text-success">작성 가능합니다.</span>');
         }
-    }); // ← on('input') 여기서 닫힘
+    }); // ??on('input') ?ш린???ロ옒
 
-    // ── 봤어요 초기 상태 확인 ──
+    // ?? 遊ㅼ뼱??珥덇린 ?곹깭 ?뺤씤 ??
     $.get(ctp + '/movie/watched/check', { movieNo: tmdbId }, function(res) {
         if (res.watched) {
             $('#watchedBtn').removeClass('btn-outline-info').addClass('btn-info');
-            $('#watchedBtnText').text('봤어요 ✓');
+                $('#watchedBtnText').text('봤어요 ✓');
         }
     }, 'json');
 
-    // ── 별점 분포 로드 ──
+    // ?? 蹂꾩젏 遺꾪룷 濡쒕뱶 ??
    $.get(ctp + '/review/stats', { movieNo: tmdbId }, function(list) {
 	    if (!list || list.length === 0) return;
 	    var data = list[0];
@@ -987,7 +1083,7 @@ $(document).ready(function() {
         $('#ratingStatsBox').show();
     }, 'json');
 
-    // ── 비슷한 영화 로드 ──
+    // ?? 鍮꾩듂???곹솕 濡쒕뱶 ??
     $.get(ctp + '/movie/similar', { tmdbId: tmdbId, page: 1 }, function(list) {
         if (!list || list.length === 0) return;
         var show = list.slice(0, 6);
@@ -1013,9 +1109,9 @@ $(document).ready(function() {
         }
     }, 'json');
 
-}); // ← document.ready 여기서 닫힘
+}); // ??document.ready ?ш린???ロ옒
 
-/* ── 별점 선택 ── */
+/* ?? 蹂꾩젏 ?좏깮 ?? */
 function setRating(val) {
     currentRating = val;
     $('#rating').val(val);
@@ -1050,7 +1146,7 @@ function setEditRating(val) {
 function showEditForm() { $('#myReviewBox').hide(); $('#editForm').show(); }
 function hideEditForm()  { $('#editForm').hide();   $('#myReviewBox').show(); }
 
-/* ── 리뷰 등록 ── */
+/* ?? 由щ럭 ?깅줉 ?? */
 function submitReview() {
     var rating  = $('#rating').val();
     var content = $('#content').val();
@@ -1077,7 +1173,7 @@ function submitReview() {
                 Swal.fire({ icon: 'success', title: '등록 완료', text: '리뷰가 등록되었습니다.', timer: 1500, showConfirmButton: false })
                     .then(() => location.reload());
             } else if (res == 'dup') {
-                Swal.fire({ icon: 'info', title: '이미 작성한 리뷰', text: '이 영화에 이미 리뷰를 작성하셨습니다. 기존 리뷰를 수정해주세요.' });
+                Swal.fire({ icon: 'info', title: '이미 작성한 리뷰', text: '이 영화에는 이미 리뷰를 작성했습니다. 기존 리뷰를 수정해주세요.' });
             } else if (res == 'length') {
                 Swal.fire({ icon: 'warning', title: '내용 길이 오류', text: '리뷰 내용은 10자 이상 2000자 이하로 작성해주세요.' });
             } else if (res == 'login') {
@@ -1090,7 +1186,7 @@ function submitReview() {
     });
 }
 
-/* ── 리뷰 수정 ── */
+/* ?? 由щ럭 ?섏젙 ?? */
 function updateReview(reviewNo) {
     var rating  = $('#editRating').val();
     var content = $('#editContent').val();
@@ -1117,7 +1213,7 @@ function updateReview(reviewNo) {
     });
 }
 
-/* ── 리뷰 삭제 ── */
+/* ?? 由щ럭 ??젣 ?? */
 function deleteReview(reviewNo) {
     Swal.fire({
         icon: 'warning', title: '리뷰 삭제',
@@ -1144,7 +1240,7 @@ function deleteReview(reviewNo) {
     });
 }
 
-/* ── 리뷰 목록 ── */
+/* ?? 由щ럭 紐⑸줉 ?? */
 function loadReviews() {
     $.ajax({
         url: ctp + '/review/list', type: 'GET',
@@ -1153,8 +1249,9 @@ function loadReviews() {
     });
 }
 
-/* ── 리뷰 렌더링 (정렬 공용) ── */
+/* ?? 由щ럭 ?뚮뜑留?(?뺣젹 怨듭슜) ?? */
 function renderReviews(list) {
+    var blindReviewMessage = '\uC2E0\uACE0\uB85C \uC778\uD574 \uBE14\uB77C\uC778\uB4DC \uCC98\uB9AC\uB41C \uB9AC\uBDF0\uC785\uB2C8\uB2E4.';
     var html = '';
     if (list.length == 0) {
         html = '<div class="empty-card"><p class="text-secondary mb-0">아직 작성된 리뷰가 없습니다.</p></div>';
@@ -1162,7 +1259,7 @@ function renderReviews(list) {
         list.forEach(function(r) {
             var stars = '';
             for (var i = 1; i <= 5; i++) {
-                stars += i <= r.rating ? '<span class="text-warning">★</span>' : '<span class="text-secondary">★</span>';
+                stars += i <= r.rating ? '<span class="text-warning">★</span>' : '<span class="text-secondary">☆</span>';
             }
             var userInitial = r.userName ? r.userName.substring(0,1) : '?';
             html += '<div class="review-item">';
@@ -1176,7 +1273,11 @@ function renderReviews(list) {
             if (r.spoiler == 1) {
                 html += '<div class="spoiler-badge mb-3"><i class="fa fa-exclamation-triangle"></i> 스포일러 포함</div>';
             }
-            html += '<div class="review-body">' + r.content + '</div>';
+            if (r.content === blindReviewMessage) {
+                html += '<div class="review-body blind-review"><i class="fa fa-eye-slash"></i> 블라인드 처리된 리뷰</div>';
+            } else {
+                html += '<div class="review-body">' + r.content + '</div>';
+            }
             html += '<div class="review-actions">';
             if (loginUserNo != 0 && r.userNo == loginUserNo) {
                 html += '<button class="btn btn-outline-secondary btn-sm like-self" disabled>';
@@ -1194,7 +1295,7 @@ function renderReviews(list) {
             html += '<div class="comment-area"><div id="commentList-' + r.reviewNo + '" class="mb-2"></div>';
             if (loginUserNo != 0) {
                 html += '<div class="input-group input-group-sm">';
-                html += '<input type="text" class="form-control bg-secondary text-white border-0" id="commentInput-' + r.reviewNo + '" placeholder="댓글을 입력하세요..." maxlength="500">';
+                html += '<input type="text" class="form-control bg-secondary text-white border-0" id="commentInput-' + r.reviewNo + '" placeholder="댓글을 입력하세요.." maxlength="500">';
                 html += '<button class="btn btn-outline-success btn-sm" onclick="writeComment(' + r.reviewNo + ')">등록</button></div>';
             }
             html += '</div></div>';
@@ -1204,7 +1305,7 @@ function renderReviews(list) {
     $('#reviewList').html(html);
 }
 
-/* ── 댓글 목록 ── */
+/* ?? ?볤? 紐⑸줉 ?? */
 function loadComments(reviewNo) {
     $.ajax({
         url: ctp + '/comment/list', type: 'GET',
@@ -1228,7 +1329,7 @@ function loadComments(reviewNo) {
     });
 }
 
-/* ── 댓글 등록 ── */
+/* ?? ?볤? ?깅줉 ?? */
 function writeComment(reviewNo) {
     var content = $('#commentInput-' + reviewNo).val();
     if (!content.trim()) {
@@ -1250,7 +1351,7 @@ function writeComment(reviewNo) {
     });
 }
 
-/* ── 댓글 수정 ── */
+/* ?? ?볤? ?섏젙 ?? */
 function editComment(commentNo) {
     var current = $('#commentText-' + commentNo).text();
     Swal.fire({
@@ -1276,7 +1377,7 @@ function editComment(commentNo) {
     });
 }
 
-/* ── 댓글 삭제 ── */
+/* ?? ?볤? ??젣 ?? */
 function deleteComment(commentNo, reviewNo) {
     Swal.fire({
         icon: 'warning', title: '댓글 삭제', text: '댓글을 삭제하시겠습니까?',
@@ -1296,7 +1397,7 @@ function deleteComment(commentNo, reviewNo) {
     });
 }
 
-/* ── 찜하기 ── */
+/* ?? 李쒗븯湲??? */
 function toggleWatchlist() {
     $.ajax({
         url: ctp + '/movie/watchlist', type: 'POST',
@@ -1316,7 +1417,7 @@ function toggleWatchlist() {
     });
 }
 
-/* ── 공감 토글 ── */
+/* ?? 怨듦컧 ?좉? ?? */
 function toggleLike(reviewNo, btn) {
     <c:choose>
         <c:when test="${not empty sessionScope.loginUser}">
@@ -1346,7 +1447,7 @@ function toggleLike(reviewNo, btn) {
     </c:choose>
 }
 
-/* ── 컬렉션 모달 열기 ── */
+/* ?? 而щ젆??紐⑤떖 ?닿린 ?? */
 function openCollectionModal() {
     var modal = new bootstrap.Modal(document.getElementById('collectionModal'));
     modal.show();
@@ -1373,14 +1474,14 @@ function openCollectionModal() {
     }, 'json');
 }
 
-/* ── 컬렉션 영화 추가/제거 ── */
+/* ?? 而щ젆???곹솕 異붽?/?쒓굅 ?? */
 function addToCollection(collectionId, btn) {
     $.post(ctp + '/collection/movie/toggle',
         { collectionId: collectionId, movieId: tmdbId },
         function(res) {
             if (res.status === 'added') {
                 $(btn).addClass('active');
-                $(btn).find('.col-check').text(' ✓');
+                $(btn).find('.col-check').text('✓');
             } else if (res.status === 'removed') {
                 $(btn).removeClass('active');
                 $(btn).find('.col-check').text('');
@@ -1390,7 +1491,7 @@ function addToCollection(collectionId, btn) {
         }, 'json');
 }
 
-/* ── 리뷰 신고 ── */
+/* ?? 由щ럭 ?좉퀬 ?? */
 function reportReview(reviewNo) {
     document.getElementById('reportTargetId').value = reviewNo;
     document.getElementById('reportReason').value = '';
@@ -1437,7 +1538,7 @@ function toggleWatched() {
 }
 function sortReviews(sort, btn) {
     currentSort = sort;
-    // 탭 스타일 전환
+    // ???ㅽ????꾪솚
     document.querySelectorAll('.sort-btn').forEach(function(b) {
         b.style.background = 'rgba(255,255,255,0.08)';
         b.style.color = '#aaa';
@@ -1457,3 +1558,5 @@ function sortReviews(sort, btn) {
 
 </body>
 </html>
+
+

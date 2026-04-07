@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.springGreen8.dao.MediaVideoCacheDAO">
+
+    <select id="selectVideoCache" resultType="com.spring.springGreen8.vo.MediaVideoCacheVO">
+        SELECT
+            cache_no      AS cacheNo,
+            tmdb_id       AS tmdbId,
+            media_type    AS mediaType,
+            season_no     AS seasonNo,
+            source_type   AS sourceType,
+            video_key     AS videoKey,
+            video_name    AS videoName,
+            video_site    AS videoSite,
+            video_type    AS videoType,
+            display_order AS displayOrder,
+            reg_date      AS regDate
+        FROM media_video_cache
+        WHERE media_type = #{mediaType}
+          AND tmdb_id = #{tmdbId}
+          <choose>
+              <when test="seasonNo != null">
+                  AND season_no = #{seasonNo}
+              </when>
+              <otherwise>
+                  AND season_no IS NULL
+              </otherwise>
+          </choose>
+        ORDER BY display_order ASC, cache_no ASC
+    </select>
+
+    <delete id="deleteVideoCache">
+        DELETE FROM media_video_cache
+        WHERE media_type = #{mediaType}
+          AND tmdb_id = #{tmdbId}
+          <choose>
+              <when test="seasonNo != null">
+                  AND season_no = #{seasonNo}
+              </when>
+              <otherwise>
+                  AND season_no IS NULL
+              </otherwise>
+          </choose>
+    </delete>
+
+    <insert id="insertVideoCache" parameterType="com.spring.springGreen8.vo.MediaVideoCacheVO"
+            useGeneratedKeys="true" keyProperty="cacheNo">
+        INSERT INTO media_video_cache (
+            tmdb_id, media_type, season_no, source_type,
+            video_key, video_name, video_site, video_type, display_order
+        ) VALUES (
+            #{tmdbId}, #{mediaType}, #{seasonNo}, #{sourceType},
+            #{videoKey}, #{videoName}, #{videoSite}, #{videoType}, #{displayOrder}
+        )
+    </insert>
+
+</mapper>

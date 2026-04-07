@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<c:set var="blindReviewMessage" value="신고로 인해 블라인드 처리된 리뷰입니다."/>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -22,6 +24,8 @@
     .table-dark-custom th { background:#0f172a; color:#64748b; font-size:13px; font-weight:600; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
     .table-dark-custom td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; font-size:14px; }
     .content-cell { max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .blind-review-chip { display:inline-flex; align-items:center; gap:8px; max-width:100%; padding:7px 12px; border-radius:999px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fecdd3; font-size:13px; font-weight:700; }
+    .blind-review-chip i { color:#fda4af; }
     input[type=text] { background:#0f172a; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:8px 14px; }
     input[type=text]::placeholder { color:#475569; }
   </style>
@@ -64,16 +68,26 @@
           <tr id="row-${r.reviewNo}">
             <td style="color:#475569;">${st.index+1}</td>
             <td>
-              <a href="${ctp}/movie/detail/${r.movieNo}"
-                 style="color:#60a5fa;text-decoration:none;font-weight:600;">
-                ${r.movieNo}
+              <a href="${ctp}/movie/detail/${r.tmdbId}"
+                 style="color:#60a5fa;text-decoration:none;font-weight:600;"
+                 title="${empty r.movieTitle ? 'TMDB ID' : r.movieTitle}">
+                ${r.tmdbId}
               </a>
             </td>
-            <td>${r.userNo}</td>
+            <td>${empty r.userName ? r.userNo : r.userName}</td>
             <td class="text-warning fw-bold">${r.rating}★</td>
-            <td class="content-cell" title="${r.content}">${r.content}</td>
+            <td class="content-cell" title="${r.content}">
+              <c:choose>
+                <c:when test="${r.content == blindReviewMessage}">
+                  <span class="blind-review-chip"><i class="fa fa-eye-slash"></i> 블라인드 처리된 리뷰</span>
+                </c:when>
+                <c:otherwise>${r.content}</c:otherwise>
+              </c:choose>
+            </td>
             <td style="color:#64748b;">${r.likeCnt}</td>
-            <td style="color:#475569;">${r.regDate}</td>
+            <td style="color:#475569;">
+              <fmt:formatDate value="${r.regDate}" pattern="yyyy년 MM월 dd일 HH:mm:ss"/>
+            </td>
             <td>
               <button class="btn btn-sm btn-outline-danger"
                       onclick="deleteReview(${r.reviewNo})">삭제</button>

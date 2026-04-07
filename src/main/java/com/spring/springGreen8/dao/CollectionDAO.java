@@ -10,37 +10,37 @@ import com.spring.springGreen8.vo.CollectionVO;
 @Mapper
 public interface CollectionDAO {
 
-    // ÄÃ·º¼Ç »ı¼º
+    // ì»¬ë ‰ì…˜ ìƒì„±
     int insertCollection(CollectionVO vo);
 
-    // ³» ÄÃ·º¼Ç ¸ñ·Ï
+    // ë‚´ ì»¬ë ‰ì…˜ ëª©ë¡
     List<CollectionVO> selectMyCollections(@Param("mid") String mid);
 
-    // °ø°³ ÄÃ·º¼Ç ¸ñ·Ï (Å½»ö ÆäÀÌÁö)
+    // ê³µê°œ ì»¬ë ‰ì…˜ ëª©ë¡ (íƒìƒ‰ í˜ì´ì§€)
     List<CollectionVO> selectPublicCollections();
 
-    // ÄÃ·º¼Ç ´Ü°Ç Á¶È¸
+    // ì»¬ë ‰ì…˜ ë‹¨ê±´ ì¡°íšŒ
     CollectionVO selectCollectionById(@Param("collectionId") int collectionId);
 
-    // ÄÃ·º¼Ç ¼öÁ¤
+    // ì»¬ë ‰ì…˜ ìˆ˜ì •
     int updateCollection(CollectionVO vo);
 
-    // ÄÃ·º¼Ç »èÁ¦ (collection_movie ´Â CASCADE ·Î ÀÚµ¿ »èÁ¦)
+    // ì»¬ë ‰ì…˜ ì‚­ì œ (collection_movie ëŠ” CASCADE ë¡œ ìë™ ì‚­ì œ)
     int deleteCollection(@Param("collectionId") int collectionId,
                          @Param("mid")          String mid);
 
-    // ¿µÈ­ Ãß°¡
+    // ì˜í™” ì¶”ê°€
     int insertCollectionMovie(@Param("collectionId") int collectionId,
                               @Param("movieId")      int movieId);
 
-    // ¿µÈ­ Á¦°Å
+    // ì˜í™” ì œê±°
     int deleteCollectionMovie(@Param("collectionId") int collectionId,
                               @Param("movieId")      int movieId);
 
-    // ÄÃ·º¼Ç¿¡ ´ã±ä ¿µÈ­ ¸ñ·Ï (TMDB id ±âÁØ)
+    // ì»¬ë ‰ì…˜ì— ë‹´ê¸´ ì˜í™” ëª©ë¡ (TMDB id ê¸°ì¤€)
     List<Integer> selectMovieIdsByCollection(@Param("collectionId") int collectionId);
 
-    // ¿µÈ­°¡ ÄÃ·º¼Ç¿¡ ÀÖ´ÂÁö È®ÀÎ
+    // ì˜í™”ê°€ ì»¬ë ‰ì…˜ì— ìˆëŠ”ì§€ í™•ì¸
     int checkCollectionMovie(@Param("collectionId") int collectionId,
                              @Param("movieId")      int movieId);
 }

@@ -23,11 +23,13 @@
     .table-dark-custom th { background:#0f172a; color:#64748b; font-size:13px; font-weight:600; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
     .table-dark-custom td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; font-size:14px; }
     .status-badge { padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
-    .status-PENDING   { background:rgba(251,191,36,0.15);  color:#fbbf24; }
-    .status-PROCESSED { background:rgba(52,208,88,0.15);   color:#34d058; }
-    .status-REJECTED  { background:rgba(148,163,184,0.1);  color:#94a3b8; }
+    .status-PENDING { background:rgba(251,191,36,0.15); color:#fbbf24; }
+    .status-PROCESSED { background:rgba(52,208,88,0.15); color:#34d058; }
+    .status-REJECTED { background:rgba(148,163,184,0.1); color:#94a3b8; }
     .type-badge { padding:3px 8px; border-radius:6px; font-size:11px; background:rgba(96,165,250,0.1); color:#60a5fa; }
-    .reason-cell { max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .reason-cell { max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .movie-link { color:#60a5fa; text-decoration:none; }
+    .movie-link:hover { text-decoration:underline; }
     input[type=text] { background:#0f172a; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:8px 14px; }
     input[type=text]::placeholder { color:#475569; }
   </style>
@@ -48,10 +50,9 @@
   <div class="main-area">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="page-title mb-0">
-        신고 관리
-        <span style="font-size:1rem;color:#64748b;font-weight:400;">(${reports.size()}건)</span>
+        신고 관리 <span style="font-size:1rem;color:#64748b;font-weight:400;">(${reports.size()}건)</span>
       </div>
-      <input type="text" id="searchInput" placeholder="신고자 / 사유 검색..." oninput="filterTable()" style="width:220px;">
+      <input type="text" id="searchInput" placeholder="신고자 / 사유 / 영화 검색..." oninput="filterTable()" style="width:260px;">
     </div>
 
     <div class="table-dark-custom">
@@ -62,6 +63,7 @@
             <th>유형</th>
             <th>신고자</th>
             <th>대상 ID</th>
+            <th>영화</th>
             <th>사유</th>
             <th>상태</th>
             <th>신고일</th>
@@ -70,28 +72,40 @@
         </thead>
         <tbody>
           <c:forEach var="r" items="${reports}" varStatus="st">
-          <tr id="row-${r.reportId}">
-            <td style="color:#475569;">${st.index+1}</td>
-            <td><span class="type-badge">${r.targetType}</span></td>
-            <td style="font-weight:600;">${r.reporterMid}</td>
-            <td style="color:#64748b;">${r.targetId}</td>
-            <td class="reason-cell" title="${r.reason}">${r.reason}</td>
-            <td>
-              <span class="status-badge status-${r.status}">${r.status}</span>
-            </td>
-            <td style="color:#475569;">${r.regDate}</td>
-            <td>
-              <c:if test="${r.status == 'PENDING'}">
-                <button class="btn btn-sm btn-outline-success me-1"
-                        onclick="updateStatus(${r.reportId}, 'PROCESSED')">처리</button>
-                <button class="btn btn-sm btn-outline-secondary"
-                        onclick="updateStatus(${r.reportId}, 'REJECTED')">기각</button>
-              </c:if>
-              <c:if test="${r.status != 'PENDING'}">
-                <span style="color:#475569;font-size:12px;">완료</span>
-              </c:if>
-            </td>
-          </tr>
+            <tr id="row-${r.reportId}">
+              <td style="color:#475569;">${st.index+1}</td>
+              <td><span class="type-badge">${r.targetType}</span></td>
+              <td style="font-weight:600;">${r.reporterMid}</td>
+              <td style="color:#64748b;">${r.targetId}</td>
+              <td>
+                <c:choose>
+                  <c:when test="${r.targetType == 'REVIEW' && r.tmdbId > 0}">
+                    <a href="${ctp}/movie/detail/${r.tmdbId}" class="movie-link" title="${r.movieTitle}">
+                      ${empty r.movieTitle ? r.tmdbId : r.movieTitle}
+                    </a>
+                  </c:when>
+                  <c:otherwise>
+                    <span style="color:#475569;">-</span>
+                  </c:otherwise>
+                </c:choose>
+              </td>
+              <td class="reason-cell" title="${r.reason}">${r.reason}</td>
+              <td>
+                <span class="status-badge status-${r.status}">${r.status}</span>
+              </td>
+              <td style="color:#475569;"><fmt:formatDate value="${r.regDate}" pattern="yyyy년 MM월 dd일 HH:mm:ss"/></td>
+              <td>
+                <c:if test="${r.status == 'PENDING'}">
+                  <button class="btn btn-sm btn-outline-success me-1"
+                          onclick="updateStatus(${r.reportId}, 'PROCESSED')">처리</button>
+                  <button class="btn btn-sm btn-outline-secondary"
+                          onclick="updateStatus(${r.reportId}, 'REJECTED')">기각</button>
+                </c:if>
+                <c:if test="${r.status != 'PENDING'}">
+                  <span style="color:#475569;font-size:12px;">완료</span>
+                </c:if>
+              </td>
+            </tr>
           </c:forEach>
         </tbody>
       </table>
@@ -110,11 +124,13 @@ function filterTable() {
 }
 
 function updateStatus(reportId, status) {
-    var msg = status === 'PROCESSED' ? '처리 완료로 변경하시겠습니까?' : '기각 처리하시겠습니까?';
+    var msg = status === 'PROCESSED'
+        ? '신고를 처리하시겠습니까? 처리 시 리뷰 신고는 블라인드 문구로 변경됩니다.'
+        : '이 신고를 기각 처리하시겠습니까?';
     if (!confirm(msg)) return;
     $.post(ctp + '/admin/report/status', { reportId: reportId, status: status }, function(res) {
-        if (res === 'ok') { location.reload(); }
-        else alert('실패했습니다.');
+        if (res === 'ok') location.reload();
+        else alert('처리에 실패했습니다.');
     });
 }
 </script>

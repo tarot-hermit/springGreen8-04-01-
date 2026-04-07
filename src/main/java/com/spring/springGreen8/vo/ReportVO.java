@@ -6,10 +6,13 @@ import lombok.Data;
 @Data
 public class ReportVO {
     private int    reportId;
-    private String reporterMid;   // ½Å°íÀÚ (user_id)
+    private String reporterMid;   // ì‹ ê³ ì (user_id)
     private String targetType;    // REVIEW | COMMENT | MEMBER
-    private int    targetId;      // ½Å°í ´ë»ó PK
-    private String reason;        // ½Å°í »çÀ¯
+    private int    targetId;      // ì‹ ê³  ëŒ€ìƒ PK
+    private String reason;        // ì‹ ê³  ì‚¬ìœ 
     private String status;        // PENDING | PROCESSED | REJECTED
     private Date   regDate;
+    private int    tmdbId;
+    private String movieTitle;
+    private String targetContent;
 }

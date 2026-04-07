@@ -25,7 +25,7 @@ public class WatchlistServiceImpl implements WatchlistService {
 	
 	@Override
 	public String toggleWatch(WatchlistVO vo) {
-		// tmdbId > movie_no º¯È¯
+		// tmdbId > movie_no ë³€í™˜
 		MovieVO movie = movieDAO.selectMovieByTmdbId(vo.getMovieNo());
 		if (movie == null) {
 			MovieVO tmdbMovie = tmdbService.getMovieDetail(vo.getMovieNo());
@@ -35,13 +35,13 @@ public class WatchlistServiceImpl implements WatchlistService {
 		}
 		vo.setMovieNo(movie.getMovieNo());
 		
-		// ÀÌ¹Ì ÂòÇßÀ¸¸é »èÁ¦
+		// ì´ë¯¸ ì°œí–ˆìœ¼ë©´ ì‚­ì œ
 		WatchlistVO exist = watchlistDAO.selectWatch(vo);
 		if (exist != null) {
 			watchlistDAO.deleteWatch(vo);
 			return "cancel";
 		}
-		// ¾øÀ¸¸é Ãß°¡ 
+		// ì—†ìœ¼ë©´ ì¶”ê°€ 
 		vo.setStatus("WANT");
 		watchlistDAO.insertWatch(vo);
 		return "ok";

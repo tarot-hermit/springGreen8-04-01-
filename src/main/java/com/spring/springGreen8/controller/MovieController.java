@@ -22,9 +22,12 @@ import com.spring.springGreen8.service.ReviewService;
 import com.spring.springGreen8.service.TmdbService;
 import com.spring.springGreen8.service.WatchedService;
 import com.spring.springGreen8.service.WatchlistService;
+import com.spring.springGreen8.vo.MediaContentVO;
+import com.spring.springGreen8.vo.MediaSearchResultVO;
 import com.spring.springGreen8.vo.MovieVO;
 import com.spring.springGreen8.vo.ReviewVO;
 import com.spring.springGreen8.vo.SearchHistoryVO;
+import com.spring.springGreen8.vo.SeasonVO;
 import com.spring.springGreen8.vo.UserVO;
 import com.spring.springGreen8.vo.WatchlistVO;
 
@@ -40,12 +43,51 @@ public class MovieController {
     @Autowired private WatchedService watchedService;
 
     @RequestMapping("/list")
-    public String list(@RequestParam(defaultValue = "1") int page, Model model) {
-        model.addAttribute("popularList", tmdbService.getPopularMovies(page));
-        model.addAttribute("nowPlayingList", tmdbService.getNowPlayingMovies(1));
-        model.addAttribute("topRatedList", tmdbService.getTopRatedMovies(1));
+    public String list(@RequestParam(defaultValue = "1") int page,
+                       @RequestParam(defaultValue = "ALL") String country,
+                       Model model) {
+        model.addAttribute("popularList", tmdbService.getPopularMovies(page, country));
+        model.addAttribute("nowPlayingList", tmdbService.getNowPlayingMovies(page, country));
+        model.addAttribute("topRatedList", tmdbService.getTopRatedMovies(page, country));
         model.addAttribute("page", page);
+        model.addAttribute("country", country);
         return "movie/list";
+    }
+
+    @RequestMapping("/tv")
+    public String tvList(@RequestParam(defaultValue = "1") int page,
+                         @RequestParam(defaultValue = "ALL") String country,
+                         Model model) {
+        model.addAttribute("popularList", tmdbService.getPopularTvShows(page, country));
+        model.addAttribute("onTheAirList", tmdbService.getOnTheAirTvShows(page, country));
+        model.addAttribute("topRatedList", tmdbService.getTopRatedTvShows(page, country));
+        model.addAttribute("page", page);
+        model.addAttribute("country", country);
+        return "movie/tvList";
+    }
+
+    @RequestMapping("/animation")
+    public String animationList(@RequestParam(defaultValue = "1") int page,
+                                @RequestParam(defaultValue = "ALL") String country,
+                                Model model) {
+        model.addAttribute("movieList", tmdbService.getAnimationMovies(page, country));
+        model.addAttribute("tvList", tmdbService.getAnimationTvShows(page, country));
+        model.addAttribute("page", page);
+        model.addAttribute("country", country);
+        return "movie/animationList";
+    }
+
+    @RequestMapping("/all")
+    public String allList(@RequestParam(defaultValue = "1") int page,
+                          @RequestParam(defaultValue = "ALL") String country,
+                          Model model) {
+        model.addAttribute("movieList", tmdbService.getPopularMovies(page, country));
+        model.addAttribute("tvList", tmdbService.getPopularTvShows(page, country));
+        model.addAttribute("animationMovieList", tmdbService.getAnimationMovies(page, country));
+        model.addAttribute("animationTvList", tmdbService.getAnimationTvShows(page, country));
+        model.addAttribute("page", page);
+        model.addAttribute("country", country);
+        return "movie/allList";
     }
 
     @RequestMapping(value = "/api/{tmdbId}", method = RequestMethod.GET,
@@ -61,6 +103,7 @@ public class MovieController {
         model.addAttribute("cast", tmdbService.getCastList(tmdbId));
         model.addAttribute("crew", tmdbService.getCrewList(tmdbId));
         model.addAttribute("videos", tmdbService.getVideoList(tmdbId));
+        model.addAttribute("watchProviders", tmdbService.getMovieWatchProviders(tmdbId, "KR"));
 
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
         if (loginUser != null) {
@@ -80,6 +123,57 @@ public class MovieController {
         return "movie/detail";
     }
 
+    @RequestMapping("/tv/{tmdbId}")
+    public String tvDetail(@PathVariable int tmdbId,
+                           @RequestParam(required = false) Integer seasonNo,
+                           Model model) {
+        MediaContentVO tv = tmdbService.getTvDetail(tmdbId);
+        model.addAttribute("tv", tv);
+        model.addAttribute("cast", tmdbService.getTvCastList(tmdbId));
+        model.addAttribute("crew", tmdbService.getTvCrewList(tmdbId));
+        model.addAttribute("watchProviders", tmdbService.getTvWatchProviders(tmdbId, "KR"));
+        Integer selectedSeasonNo = resolveSeasonNo(tv, seasonNo);
+        model.addAttribute("selectedSeasonNo", selectedSeasonNo);
+        List<Map<String, Object>> seasonVideos = new ArrayList<>();
+        List<Map<String, Object>> videos = new ArrayList<>();
+        String videoFallbackLabel = null;
+        if (selectedSeasonNo != null) {
+            SeasonVO selectedSeason = tmdbService.getTvSeasonDetail(tmdbId, selectedSeasonNo);
+            model.addAttribute("selectedSeason", selectedSeason);
+            seasonVideos = tmdbService.getTvSeasonVideoList(tmdbId, selectedSeasonNo);
+            videos = seasonVideos;
+
+            if (videos.isEmpty() && selectedSeasonNo != 1) {
+                videos = tmdbService.getTvSeasonVideoList(tmdbId, 1);
+                if (!videos.isEmpty()) {
+                    videoFallbackLabel = "season1";
+                }
+            }
+        }
+        model.addAttribute("seasonVideos", seasonVideos);
+        if (videos.isEmpty()) {
+            videos = tmdbService.getTvVideoList(tmdbId);
+            if (!videos.isEmpty() && selectedSeasonNo != null) {
+                videoFallbackLabel = "series";
+            }
+        }
+        model.addAttribute("videoFallbackLabel", videoFallbackLabel);
+        model.addAttribute("videos", videos);
+        return "movie/tvDetail";
+    }
+
+    private Integer resolveSeasonNo(MediaContentVO tv, Integer seasonNo) {
+        if (seasonNo != null) return seasonNo;
+        if (tv == null || tv.getSeasons() == null || tv.getSeasons().isEmpty()) return null;
+
+        for (SeasonVO season : tv.getSeasons()) {
+            if (season.getSeasonNumber() > 0) {
+                return season.getSeasonNumber();
+            }
+        }
+        return tv.getSeasons().get(0).getSeasonNumber();
+    }
+
     @RequestMapping(value = "/watchlist", method = RequestMethod.POST)
     @ResponseBody
     public String toggleWatchlist(int tmdbId, HttpSession session) {
@@ -94,10 +188,14 @@ public class MovieController {
     @RequestMapping("/search")
     public String search(@RequestParam(defaultValue = "") String q,
                          @RequestParam(defaultValue = "1") int page,
+                         @RequestParam(defaultValue = "all") String mediaType,
+                         @RequestParam(defaultValue = "ALL") String country,
                          HttpSession session, Model model) {
-        List<MovieVO> searchList = new ArrayList<>();
+        MediaSearchResultVO searchResult = new MediaSearchResultVO();
+        List<MediaContentVO> searchList = new ArrayList<>();
         if (!q.isEmpty()) {
-            searchList = tmdbService.searchMovies(q, page);
+            searchResult = tmdbService.searchContents(q, page, mediaType, country);
+            searchList = searchResult.getContents();
             UserVO loginUser = (UserVO) session.getAttribute("loginUser");
             if (loginUser != null) {
                 SearchHistoryVO history = new SearchHistoryVO();
@@ -112,8 +210,11 @@ public class MovieController {
             model.addAttribute("historyList", searchHistoryDAO.selectSearchByUserNo(loginUser.getUserNo()));
         }
         model.addAttribute("searchList", searchList);
+        model.addAttribute("searchResult", searchResult);
         model.addAttribute("q", q);
         model.addAttribute("page", page);
+        model.addAttribute("mediaType", mediaType);
+        model.addAttribute("country", country);
         model.addAttribute("popularKeywords", searchHistoryDAO.selectPopularKeywords());
         return "movie/search";
     }
@@ -141,7 +242,9 @@ public class MovieController {
                         @RequestParam(defaultValue = "1") int page,
                         Model model) {
         if (genreId != null) {
-            model.addAttribute("genreList", tmdbService.getMoviesByGenre(genreId, page));
+            MediaSearchResultVO genreResult = tmdbService.getContentsByGenre(genreId, page);
+            model.addAttribute("genreList", genreResult.getContents());
+            model.addAttribute("genreResult", genreResult);
         }
         model.addAttribute("genreId", genreId);
         model.addAttribute("genreName", genreName);

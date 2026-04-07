@@ -12,7 +12,7 @@ public class CommentVO {
 	private String content;
 	private Date regDate;
 	
-	// JOIN¿ë
+	// JOINìš©
 	private String userName;
 	private String userImg;
 }

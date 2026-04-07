@@ -1,0 +1,9 @@
+﻿<div class="${empty countrySelectWrapperClass ? 'col-12 col-md-4 col-lg-3' : countrySelectWrapperClass}">
+  <label class="form-label small text-secondary mb-2">${empty countrySelectLabel ? '국가' : countrySelectLabel}</label>
+  <select name="${empty countrySelectName ? 'country' : countrySelectName}"
+          class="${empty countrySelectClass ? 'form-select bg-secondary text-white border-0' : countrySelectClass}">
+    <c:forEach var="opt" items="${countryOptions}">
+      <option value="${opt.key}" ${country == opt.key ? 'selected' : ''}>${opt.value}</option>
+    </c:forEach>
+  </select>
+</div>

@@ -69,13 +69,18 @@
 	    SELECT
 	        r.review_no  AS reviewNo,
 	        r.movie_no   AS movieNo,
+	        COALESCE(m.tmdb_id, r.movie_no) AS tmdbId,
+	        m.title      AS movieTitle,
 	        r.user_no    AS userNo,
+	        u.user_name  AS userName,
 	        r.rating,
 	        r.content,
 	        r.reg_date   AS regDate,
 	        (SELECT COUNT(*) FROM review_like rl
 	         WHERE rl.review_no = r.review_no) AS likeCnt
 	    FROM review r
+        LEFT JOIN users u ON u.user_no = r.user_no
+        LEFT JOIN movie m ON m.movie_no = r.movie_no
 	    ORDER BY r.reg_date DESC
 	</select>
 
@@ -92,6 +97,27 @@
     ============================================================ -->
     <select id="getAllReports" resultType="com.spring.springGreen8.vo.ReportVO">
         SELECT
+            rp.report_id    AS reportId,
+            rp.reporter_mid AS reporterMid,
+            rp.target_type  AS targetType,
+            rp.target_id    AS targetId,
+            rp.reason       AS reason,
+            rp.status       AS status,
+            rp.reg_date     AS regDate,
+            COALESCE(m.tmdb_id, 0) AS tmdbId,
+            m.title         AS movieTitle,
+            rv.content      AS targetContent
+        FROM report rp
+        LEFT JOIN review rv
+               ON rp.target_type = 'REVIEW'
+              AND rv.review_no = rp.target_id
+        LEFT JOIN movie m
+               ON rv.movie_no = m.movie_no
+        ORDER BY rp.reg_date DESC
+    </select>
+
+    <select id="getReportById" resultType="com.spring.springGreen8.vo.ReportVO">
+        SELECT
             report_id    AS reportId,
             reporter_mid AS reporterMid,
             target_type  AS targetType,
@@ -100,8 +126,14 @@
             status,
             reg_date     AS regDate
         FROM report
-        ORDER BY reg_date DESC
+        WHERE report_id = #{reportId}
     </select>
+
+    <update id="blindReview">
+        UPDATE review
+        SET content = #{blindMessage}
+        WHERE review_no = #{reviewId}
+    </update>
 
     <!-- ============================================================
          신고 상태 변경 (PENDING → PROCESSED | REJECTED)

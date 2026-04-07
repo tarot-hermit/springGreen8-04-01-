@@ -1,7 +1,8 @@
- db.username=root
- db.password=1234
+db.username=YOUR_DB_USERNAME
+db.password=YOUR_DB_PASSWORD
 
- mail.username=dldk5252@gmail.com
- mail.password=rxpaxajzfueezutv
+mail.username=YOUR_MAIL_USERNAME
+mail.password=YOUR_MAIL_PASSWORD
 
-  tmdb.api.key=66da9cfe880193a0b0b756b8fb46a5a3
+tmdb.api.key=YOUR_TMDB_API_KEY
+youtube.api.key=YOUR_YOUTUBE_API_KEY

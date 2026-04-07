@@ -10,10 +10,10 @@ public class CollectionVO {
 	private String mid;			// userId (user_id)
 	private String title;
 	private String description;
-	private int isPublic;		// 0:ºñ°ø°³ ,1: °ø°³
+	private int isPublic;		// 0:ë¹„ê³µê°œ ,1: ê³µê°œ
 	private Date regDate;
 	private Date updateDate;
 	
-	// JOIN ¿ë
+	// JOIN ìš©
 	private int movieCount;
 }

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -72,7 +73,9 @@
                 ${u.userRole}
               </span>
             </td>
-            <td style="color:#475569;">${u.joinDate}</td>
+            <td style="color:#475569;">
+              <fmt:formatDate value="${u.joinDate}" pattern="yyyy년 MM월 dd일 HH:mm:ss"/>
+            </td>
             <td>
               <c:if test="${u.userRole != 'ADMIN'}">
                 <button class="btn btn-sm btn-outline-success me-1"

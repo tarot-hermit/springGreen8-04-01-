@@ -23,7 +23,7 @@ public class ReportController {
     @Autowired
     private ReportDAO reportDAO;
 
-    // �Ű� ��� (Ajax)
+    // 신고 등록 (Ajax)
     @RequestMapping(value = "/insert", method = RequestMethod.POST,
                     produces = "application/json; charset=utf-8")
     @ResponseBody
@@ -38,21 +38,21 @@ public class ReportController {
 
         if (loginUser == null) {
             result.put("status", "login");
-            result.put("msg", "�α����� �ʿ��մϴ�.");
+            result.put("msg", "로그인이 필요합니다.");
             return result;
         }
 
         if (reason == null || reason.trim().isEmpty() || reason.length() > 500) {
             result.put("status", "fail");
-            result.put("msg", "�Ű� ������ 1�� �̻� 500�� ���Ϸ� �Է����ּ���.");
+            result.put("msg", "신고 사유를 1자 이상 500자 이하로 입력해주세요.");
             return result;
         }
 
-        // �ߺ� �Ű� Ȯ��
+        // 중복 신고 확인
         int dup = reportDAO.checkDuplicate(loginUser.getUserId(), targetType, targetId);
         if (dup > 0) {
             result.put("status", "dup");
-            result.put("msg", "�̹� �Ű��� �׸��Դϴ�.");
+            result.put("msg", "이미 신고한 항목입니다.");
             return result;
         }
 
@@ -64,7 +64,7 @@ public class ReportController {
 
         int res = reportDAO.insertReport(vo);
         result.put("status", res > 0 ? "ok" : "fail");
-        result.put("msg",    res > 0 ? "�Ű��� �����Ǿ����ϴ�." : "�Ű� ������ �����߽��ϴ�.");
+        result.put("msg",    res > 0 ? "신고가 접수되었습니다." : "신고 접수에 실패했습니다.");
         return result;
     }
 }

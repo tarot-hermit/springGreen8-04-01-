@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<c:set var="blindReviewMessage" value="신고로 인해 블라인드 처리된 리뷰입니다."/>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -53,6 +54,8 @@
                   box-shadow:0 6px 18px rgba(0,0,0,0.05); }
     .review-title{ font-size:16px;font-weight:800;color:#111827;margin-bottom:6px; }
     .review-content{ color:#4b5563 !important;line-height:1.65;word-break:break-word; }
+    .review-content.blind{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:14px; background:#fff1f2; border:1px solid #fecdd3; color:#be123c !important; font-weight:700; }
+    .review-card.blind{ border-color:#fecdd3; background:linear-gradient(180deg,#fff7f8 0%,#ffffff 100%); }
     .review-date{ color:var(--watcha-sub) !important;font-size:13px; }
     .poster-sm{ width:64px;height:96px;object-fit:cover;border-radius:10px;background:#f3f4f6; }
     .watch-card{ background:#fff;border:1px solid #efefef;border-radius:18px;padding:10px;
@@ -183,7 +186,7 @@
     <c:choose>
       <c:when test="${not empty reviewList}">
         <c:forEach var="review" items="${reviewList}">
-          <div class="review-card p-3 mb-3">
+          <div class="review-card p-3 mb-3 ${review.content == blindReviewMessage ? 'blind' : ''}">
             <div class="row align-items-center g-3">
               <div class="col-auto">
                 <img src="https://image.tmdb.org/t/p/w200${review.posterPath}"
@@ -201,7 +204,14 @@
                   </c:forEach>
                   <span class="small ms-1" style="color:var(--watcha-yellow);font-weight:700;">${review.rating}점</span>
                 </div>
-                <p class="review-content small mb-0">${review.content}</p>
+                <c:choose>
+                  <c:when test="${review.content == blindReviewMessage}">
+                    <p class="review-content blind small mb-0"><i class="fa fa-eye-slash"></i> 블라인드 처리된 리뷰</p>
+                  </c:when>
+                  <c:otherwise>
+                    <p class="review-content small mb-0">${review.content}</p>
+                  </c:otherwise>
+                </c:choose>
               </div>
               <div class="col-12 col-md-auto text-md-end">
                 <small class="review-date">

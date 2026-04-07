@@ -12,7 +12,7 @@ public class WatchlistVO {
 	    private String status;  // WANT, WATCHED, STOP
 	    private Date regDate;
 
-	    // JOIN¿ë (DB ÄÃ·³ ¾Æ´Ô)
+	    // JOINìš© (DB ì»¬ëŸ¼ ì•„ë‹˜)
 	    private String title;
 	    private String posterPath;
 	    private int tmdbId;

@@ -15,7 +15,7 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
         if (values == null) return null;
         String[] cleaned = new String[values.length];
         for (int i = 0; i < values.length; i++) {
-            cleaned[i] = cleanXss(values[i]);
+            cleaned[i] = sanitizeInput(values[i]);
         }
         return cleaned;
     }
@@ -23,28 +23,22 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
     @Override
     public String getParameter(String parameter) {
         String value = super.getParameter(parameter);
-        return value == null ? null : cleanXss(value);
-    }
-
-    @Override
-    public String getHeader(String name) {
-        String value = super.getHeader(name);
-        return value == null ? null : cleanXss(value);
+        return value == null ? null : sanitizeInput(value);
     }
 
     private String cleanXss(String value) {
         if (value == null || value.isEmpty()) return value;
 
-        // <script> ºí·Ï Á¦°Å
+        // <script> ë¸”ë¡ ì œê±°
         value = value.replaceAll("(?is)<script[^>]*>.*?</script>", "");
-        // HTML ÅÂ±× Á¦°Å
+        // HTML íƒœê·¸ ì œê±°
         value = value.replaceAll("(?i)<[^>]*>", "");
-        // À§Çè ÇÁ·ÎÅäÄİ Á¦°Å
+        // ìœ„í—˜ í”„ë¡œí† ì½œ ì œê±°
         value = value.replaceAll("(?i)javascript\\s*:", "");
         value = value.replaceAll("(?i)vbscript\\s*:", "");
-        // ÀÌº¥Æ® ÇÚµé·¯ Á¦°Å
+        // ì´ë²¤íŠ¸ í•¸ë“¤ëŸ¬ ì œê±°
         value = value.replaceAll("(?i)on[a-z]+\\s*=", "");
-        // Æ¯¼ö¹®ÀÚ ¿£Æ¼Æ¼ ÀÎÄÚµù
+        // íŠ¹ìˆ˜ë¬¸ì ì—”í‹°í‹° ì¸ì½”ë”©
         value = value.replace("&",  "&amp;")
                      .replace("<",  "&lt;")
                      .replace(">",  "&gt;")
@@ -52,5 +46,21 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
                      .replace("'",  "&#x27;")
                      .replace("/",  "&#x2F;");
         return value;
+    }
+
+    private String sanitizeInput(String value) {
+        if (value == null || value.isEmpty()) return value;
+
+        value = value.replace("\u0000", "");
+        value = value.replaceAll("(?is)<(script|style|iframe|object|embed)[^>]*>.*?</\\1\\s*>", "");
+        value = value.replaceAll("(?i)javascript\\s*:", "");
+        value = value.replaceAll("(?i)vbscript\\s*:", "");
+        value = value.replaceAll("(?i)data\\s*:\\s*text/html", "");
+        value = value.replaceAll("(?i)on[a-z]+\\s*=", "");
+
+        return value.replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#x27;");
     }
 }

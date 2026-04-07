@@ -6,11 +6,11 @@ import lombok.Data;
 @Data
 public class NotificationVO {
     private int    notiId;
-    private String receiverMid;   // ¾Ë¸² ¹Ş´Â »ç¶÷ (user_id)
-    private String senderMid;     // ¾Ë¸² ¹ß»ı½ÃÅ² »ç¶÷ (user_id)
+    private String receiverMid;   // ì•Œë¦¼ ë°›ëŠ” ì‚¬ëŒ (user_id)
+    private String senderMid;     // ì•Œë¦¼ ë°œìƒì‹œí‚¨ ì‚¬ëŒ (user_id)
     private String notiType;      // COMMENT | LIKE | REVIEW
-    private int    refId;         // ÂüÁ¶ PK (review_id / comment_id)
-    private String message;       // ¾Ë¸² º»¹®
-    private int    isRead;        // 0: ¹ÌÀĞÀ½, 1: ÀĞÀ½
+    private int    refId;         // ì°¸ì¡° PK (review_id / comment_id)
+    private String message;       // ì•Œë¦¼ ë³¸ë¬¸
+    private int    isRead;        // 0: ë¯¸ì½ìŒ, 1: ì½ìŒ
     private Date   regDate;
 }
