@@ -1,4 +1,4 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
@@ -108,7 +108,7 @@
         <div class="input-group">
           <input type="text" class="form-control bg-secondary text-white border-0"
                  name="q" id="navSearch" placeholder="콘텐츠 검색.."
-                 autocomplete="off" value="${param.q}">
+                 autocomplete="off" value="${fn:escapeXml(param.q)}">
           <button type="submit" class="btn btn-success">
             <i class="fa fa-search"></i>
           </button>
@@ -131,7 +131,7 @@
           <c:otherwise>
             <li class="nav-item">
               <a class="nav-link" href="${ctp}/user/mypage">
-                <i class="fa fa-user"></i> ${sessionScope.loginUser.userName}
+                <i class="fa fa-user"></i> ${fn:escapeXml(sessionScope.loginUser.userName)}
               </a>
             </li>
 
@@ -203,6 +203,10 @@
 <script>
 var _ctp = '${ctp}';
 
+function escapeHtml(value) {
+    return $('<div>').text(value == null ? '' : String(value)).html();
+}
+
 function fetchNotiCount() {
     $.get(_ctp + '/notification/count', function(res) {
         var cnt = res.count || 0;
@@ -225,13 +229,12 @@ $('#notiDropdown').on('click', function() {
             var isRead = n.isRead == 1;
             html += '<li>';
             html += '<a class="dropdown-item py-2 ' + (isRead ? 'text-secondary' : 'fw-bold') + '"';
-            html += ' href="' + _ctp + '/movie/detail/' + n.refId + '"';
-            html += ' onclick="readNoti(' + n.notiId + ')">';
+            html += ' href="' + _ctp + '/notification/open?notiId=' + n.notiId + '">';
             html += '<div style="white-space:normal;font-size:13px;">';
             html += (isRead ? '' : '<span class="text-danger me-1">NEW</span>');
-            html += n.message;
+            html += escapeHtml(n.message);
             html += '</div>';
-            html += '<small class="text-secondary" style="font-size:11px;">' + (n.regDate || '') + '</small>';
+            html += '<small class="text-secondary" style="font-size:11px;">' + escapeHtml(n.regDate || '') + '</small>';
             html += '</a></li>';
         });
         html += '<li><hr class="dropdown-divider"></li>';
@@ -240,10 +243,6 @@ $('#notiDropdown').on('click', function() {
         $('#notiList').html(html);
     }, 'json');
 });
-
-function readNoti(notiId) {
-    $.post(_ctp + '/notification/read', { notiId: notiId });
-}
 
 function markAllRead() {
     $.post(_ctp + '/notification/readAll', function() {

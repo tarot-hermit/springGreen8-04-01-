@@ -6,6 +6,7 @@ import com.spring.springGreen8.vo.CollectionVO;
 public interface CollectionService {
     int createCollection(CollectionVO vo);
     List<CollectionVO> getMyCollections(String mid);
+    List<CollectionVO> getMyCollections(String mid, Integer movieId);
     List<CollectionVO> getPublicCollections();
     CollectionVO getCollectionById(int collectionId);
     int updateCollection(CollectionVO vo);

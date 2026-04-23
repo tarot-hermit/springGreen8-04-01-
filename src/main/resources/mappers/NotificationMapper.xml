@@ -5,23 +5,21 @@
 <mapper namespace="com.spring.springGreen8.dao.NotificationDAO">
 
     <resultMap id="notiResultMap" type="com.spring.springGreen8.vo.NotificationVO">
-        <id     property="notiId"      column="noti_id"/>
+        <id property="notiId" column="noti_id"/>
         <result property="receiverMid" column="receiver_mid"/>
-        <result property="senderMid"   column="sender_mid"/>
-        <result property="notiType"    column="noti_type"/>
-        <result property="refId"       column="ref_id"/>
-        <result property="message"     column="message"/>
-        <result property="isRead"      column="is_read"/>
-        <result property="regDate"     column="reg_date"/>
+        <result property="senderMid" column="sender_mid"/>
+        <result property="notiType" column="noti_type"/>
+        <result property="refId" column="ref_id"/>
+        <result property="message" column="message"/>
+        <result property="isRead" column="is_read"/>
+        <result property="regDate" column="reg_date"/>
     </resultMap>
 
-    <!-- 알림 삽입 -->
     <insert id="insertNotification">
         INSERT INTO notification (receiver_mid, sender_mid, noti_type, ref_id, message)
         VALUES (#{receiverMid}, #{senderMid}, #{notiType}, #{refId}, #{message})
     </insert>
 
-    <!-- 내 알림 목록 최신순 20개 -->
     <select id="selectMyNotifications" resultMap="notiResultMap">
         SELECT noti_id, receiver_mid, sender_mid, noti_type,
                ref_id, message, is_read, reg_date
@@ -31,7 +29,14 @@
         LIMIT 20
     </select>
 
-    <!-- 미읽음 수 -->
+    <select id="selectNotificationById" resultMap="notiResultMap">
+        SELECT noti_id, receiver_mid, sender_mid, noti_type,
+               ref_id, message, is_read, reg_date
+        FROM notification
+        WHERE noti_id = #{notiId}
+          AND receiver_mid = #{receiverMid}
+    </select>
+
     <select id="countUnread" resultType="int">
         SELECT COUNT(*)
         FROM notification
@@ -39,7 +44,6 @@
           AND is_read = 0
     </select>
 
-    <!-- 단건 읽음 -->
     <update id="markAsRead">
         UPDATE notification
         SET is_read = 1
@@ -47,12 +51,16 @@
           AND receiver_mid = #{receiverMid}
     </update>
 
-    <!-- 전체 읽음 -->
     <update id="markAllAsRead">
         UPDATE notification
         SET is_read = 1
         WHERE receiver_mid = #{receiverMid}
           AND is_read = 0
     </update>
+
+    <delete id="deleteNotificationsByMid">
+        DELETE FROM notification
+        WHERE receiver_mid = #{receiverMid}
+    </delete>
 
 </mapper>

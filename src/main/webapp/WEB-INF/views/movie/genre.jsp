@@ -1,4 +1,4 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
@@ -344,7 +344,7 @@
                   <div class="content-thumb">
                     <img src="https://image.tmdb.org/t/p/w500${item.posterPath}"
                          class="content-poster"
-                         onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+                         onerror="this.src='https://placehold.co/200x280?text=No+Image'">
                     <div class="content-score">★ ${item.voteAverage}</div>
                     <div class="type-badge ${item.mediaType == 'tv' ? 'tv' : ''} ${item.animation ? 'animation' : ''}">
                       <c:choose>

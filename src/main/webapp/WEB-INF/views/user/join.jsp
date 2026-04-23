@@ -91,7 +91,7 @@
             <label class="form-label">아이디 <span class="text-danger">*</span></label>
             <div class="input-group">
               <input type="text" class="form-control bg-secondary text-white border-0 watcha-input"
-                     name="userId" id="userId" placeholder="영문+숫자 4~15자" required>
+                     name="userId" id="userId" placeholder="영문+숫자 4~20자" maxlength="20" required>
               <button type="button" class="btn btn-outline-success" onclick="checkId()">중복확인</button>
             </div>
             <small id="idMsg" class="mt-1 d-block"></small>
@@ -114,7 +114,7 @@
           <div class="mb-3">
             <label class="form-label">닉네임 <span class="text-danger">*</span></label>
             <input type="text" class="form-control bg-secondary text-white border-0 watcha-input"
-                   name="userName" id="userName" placeholder="한글/영문 2~10자" required>
+                   name="userName" id="userName" placeholder="한글/영문/숫자 2~10자" maxlength="10" required>
             <small id="nameMsg" class="mt-1 d-block"></small>
           </div>
 
@@ -122,7 +122,7 @@
             <label class="form-label">이메일 <span class="text-danger">*</span></label>
             <div class="input-group mb-2">
               <input type="email" class="form-control bg-secondary text-white border-0 watcha-input"
-                     name="userEmail" id="userEmail" placeholder="이메일 입력" required>
+                     name="userEmail" id="userEmail" placeholder="이메일 입력" maxlength="100" required>
               <button type="button" class="btn btn-outline-info" onclick="sendEmail()">인증코드 발송</button>
             </div>
             <div class="input-group">
@@ -163,9 +163,10 @@ var idChecked     = false;
 var emailVerified = false;
 var ctp = '${ctp}';
 
-var regId   = /^[a-zA-Z0-9]{4,15}$/;
+var regId   = /^[a-zA-Z0-9]{4,20}$/;
 var regPw   = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$/;
-var regName = /^[가-힣a-zA-Z]{2,10}$/;
+var regName = /^[가-힣a-zA-Z0-9]{2,10}$/;
+var regEmail = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
 /* ── Toast 헬퍼 ── */
 var Toast = Swal.mixin({
@@ -176,9 +177,9 @@ var Toast = Swal.mixin({
 
 /* ── 아이디 중복확인 ── */
 function checkId() {
-    var userId = $('#userId').val();
+    var userId = $('#userId').val().trim();
     if (!regId.test(userId)) {
-        $('#idMsg').html('<span class="text-danger">영문+숫자 4~15자로 입력해주세요.</span>');
+        $('#idMsg').html('<span class="text-danger">영문+숫자 4~20자로 입력해주세요.</span>');
         idChecked = false; return;
     }
     $.ajax({
@@ -186,6 +187,9 @@ function checkId() {
         success: function(res) {
             if (res == 'dup') {
                 $('#idMsg').html('<span class="text-danger">이미 사용중인 아이디입니다.</span>');
+                idChecked = false;
+            } else if (res == 'invalid') {
+                $('#idMsg').html('<span class="text-danger">영문+숫자 4~20자로 입력해주세요.</span>');
                 idChecked = false;
             } else {
                 $('#idMsg').html('<span class="text-success">사용 가능한 아이디입니다.</span>');
@@ -195,6 +199,11 @@ function checkId() {
         }
     });
 }
+
+$('#userId').on('input', function() {
+    idChecked = false;
+    $('#idMsg').html('');
+});
 
 /* ── 비밀번호 실시간 체크 ── */
 $('#userPw').on('input', function() {
@@ -216,7 +225,7 @@ $('#userPwCheck').on('input', function() {
 /* ── 닉네임 실시간 체크 ── */
 $('#userName').on('input', function() {
     if (!regName.test($(this).val())) {
-        $('#nameMsg').html('<span class="text-danger">한글/영문 2~10자로 입력해주세요.</span>');
+        $('#nameMsg').html('<span class="text-danger">한글/영문/숫자 2~10자로 입력해주세요.</span>');
     } else {
         $('#nameMsg').html('<span class="text-success">✓ 사용 가능한 닉네임입니다.</span>');
     }
@@ -224,9 +233,13 @@ $('#userName').on('input', function() {
 
 /* ── 이메일 인증코드 발송 ── */
 function sendEmail() {
-    var email = $('#userEmail').val();
+    var email = $('#userEmail').val().trim();
     if (!email) {
         Swal.fire({ icon: 'warning', title: '이메일 필요', text: '이메일을 입력해주세요.' });
+        return;
+    }
+    if (!regEmail.test(email)) {
+        $('#emailMsg').html('<span class="text-danger">올바른 이메일 형식으로 입력해주세요.</span>');
         return;
     }
     $.ajax({
@@ -234,6 +247,10 @@ function sendEmail() {
         success: function(res) {
             if (res == 'dup') {
                 $('#emailMsg').html('<span class="text-danger">이미 사용중인 이메일입니다.</span>');
+                return;
+            }
+            if (res == 'invalid') {
+                $('#emailMsg').html('<span class="text-danger">올바른 이메일 형식으로 입력해주세요.</span>');
                 return;
             }
             // 로딩 스피너
@@ -277,6 +294,10 @@ function checkEmailCode() {
                 $('#emailMsg').html('<span class="text-success">✓ 이메일 인증이 완료되었습니다.</span>');
                 emailVerified = true;
                 Toast.fire({ icon: 'success', title: '이메일 인증 완료!' });
+            } else if (res == 'expired') {
+                $('#emailMsg').html('<span class="text-danger">인증코드가 만료되었습니다. 다시 발송해주세요.</span>');
+                emailVerified = false;
+                Swal.fire({ icon: 'error', title: '인증코드 만료', text: '인증코드 유효시간(5분)이 지났습니다. 다시 발송해주세요.' });
             } else {
                 $('#emailMsg').html('<span class="text-danger">인증코드가 올바르지 않습니다.</span>');
                 emailVerified = false;
@@ -285,6 +306,11 @@ function checkEmailCode() {
         }
     });
 }
+
+$('#userEmail').on('input', function() {
+    emailVerified = false;
+    $('#emailMsg').html('');
+});
 
 /* ── 카카오 주소 검색 ── */
 function searchAddr() {

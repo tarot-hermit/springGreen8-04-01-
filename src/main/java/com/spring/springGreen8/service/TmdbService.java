@@ -1,4 +1,4 @@
-﻿package com.spring.springGreen8.service;
+package com.spring.springGreen8.service;
 
 import java.util.List;
 import java.util.Map;
@@ -45,6 +45,7 @@ public interface TmdbService {
     List<Map<String, Object>> getMovieVideos(int tmdbId);
     List<OttProviderVO> getMovieWatchProviders(int tmdbId, String regionCode);
     List<OttProviderVO> getTvWatchProviders(int tmdbId, String regionCode);
+    List<Map<String, Object>> getTvKeywords(int tmdbId);
 
     Map<String, Object> getPersonDetail(int personId);
     List<Map<String, Object>> getPersonMovies(int personId);

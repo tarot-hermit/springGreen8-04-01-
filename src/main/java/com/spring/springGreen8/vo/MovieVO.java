@@ -19,4 +19,5 @@ public class MovieVO {
 	
 	private double voteCount;
 	private String originalTitle;
+	private boolean animation;
 }

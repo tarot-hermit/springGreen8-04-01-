@@ -1,5 +1,6 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <c:set var="backListUrl" value="${ctp}/movie/list"/>
@@ -25,6 +26,7 @@
   <c:set var="backListUrl" value="${ctp}/movie/genre?genreId=${param.genreId}&genreName=${param.genreName}&page=${empty param.page ? 1 : param.page}"/>
   <c:set var="backListLabel" value="장르 목록"/>
 </c:if>
+<c:set var="detailSearchMediaType" value="${movie.animation or param.from == 'animation' ? 'animation' : 'movie'}"/>
 <!DOCTYPE html>
 <html>
 <head>
@@ -408,6 +410,13 @@
       margin-bottom: 8px;
     }
 
+    .comment-item.comment-reply {
+      margin-left: 24px;
+      padding-left: 16px;
+      border-left: 2px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.02);
+    }
+
     .comment-main {
       display: flex;
       gap: 8px;
@@ -438,12 +447,77 @@
       color: #fff;
     }
 
+    .comment-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    .reply-mark {
+      color: #9ec5fe;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .reply-box {
+      margin: 8px 0 12px 24px;
+      padding-left: 16px;
+      border-left: 2px solid rgba(255,255,255,0.08);
+    }
+
+    .reply-editor {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .reply-editor .form-control {
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .reply-editor .form-control::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .reply-editor .btn {
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
     .input-group.input-group-sm .form-control {
       border-radius: 14px 0 0 14px !important;
     }
 
     .input-group.input-group-sm .btn {
       border-radius: 0 14px 14px 0 !important;
+    }
+
+    @media (max-width: 576px) {
+      .comment-item {
+        flex-direction: column;
+      }
+
+      .comment-item.comment-reply,
+      .reply-box {
+        margin-left: 12px;
+      }
+
+      .comment-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .reply-editor {
+        flex-wrap: wrap;
+      }
+
+      .reply-editor .form-control {
+        width: 100%;
+      }
     }
 
     .info-title {
@@ -517,6 +591,33 @@
       font-size: 0.8rem;
     }
 
+    .keyword-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .keyword-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(40,167,69,0.12);
+      border: 1px solid rgba(52,208,88,0.22);
+      color: #d8ffe3;
+      font-size: 0.9rem;
+      line-height: 1;
+      text-decoration: none;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .keyword-chip:hover {
+      transform: translateY(-1px);
+      border-color: rgba(52,208,88,0.46);
+      background: rgba(40,167,69,0.2);
+      color: #fff;
+    }
+
     @media (max-width: 991px) {
       .section-shell {
         margin-top: -20px;
@@ -581,7 +682,7 @@
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
 
 <div class="detail-page">
-  <!-- ?덉뼱濡??곸뿭 -->
+  <!-- 영화 상세 헤더 -->
   <div class="backdrop">
     <div class="container hero-content">
       <div class="row align-items-end g-4">
@@ -589,7 +690,7 @@
           <div class="poster-wrap">
             <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                  class="poster-img"
-                 onerror="this.src='https://via.placeholder.com/250x375?text=No+Image'">
+                 onerror="this.src='https://placehold.co/250x375?text=No+Image'">
           </div>
         </div>
 
@@ -649,9 +750,9 @@
 				    <i class="fa fa-eye"></i> <span id="watchedBtnText">봤어요</span>
 				  </button>
 				</c:if>
-			    <%-- 而щ젆??異붽? 踰꾪듉 --%>
-			    <button class="btn btn-outline-warning" onclick="openCollectionModal()">
-			      <i class="fa fa-folder-open"></i> 컬렉션에 추가
+			    <%-- 컬렉션 추가 버튼 --%>
+			    <button class="btn btn-outline-warning" id="collectionBtn" onclick="openCollectionModal()">
+			      <i class="fa fa-folder-open"></i> <span id="collectionBtnText">컬렉션에 추가</span>
 			    </button>
 			  </c:if>
 			  <a href="${backListUrl}" class="btn btn-soft-secondary">
@@ -663,7 +764,7 @@
     </div>
   </div>
 
-  <!-- 蹂몃Ц -->
+  <!-- 본문 -->
   <div class="container section-shell pb-5">
     <div class="row g-4">
       <div class="col-lg-8">
@@ -680,12 +781,28 @@
             </c:choose>
           </div>
         </div>
+
+        <c:if test="${not empty keywords}">
+        <div class="content-card mb-4">
+          <h4 class="section-title">키워드</h4>
+          <div class="keyword-cloud">
+            <c:forEach var="keyword" items="${keywords}">
+              <c:url var="keywordSearchUrl" value="/movie/search">
+                <c:param name="q" value="# ${keyword.name}"/>
+                <c:param name="mediaType" value="${detailSearchMediaType}"/>
+              </c:url>
+              <a href="${keywordSearchUrl}" class="keyword-chip"># ${keyword.name}</a>
+            </c:forEach>
+          </div>
+        </div>
+        </c:if>
+
         <div class="content-card mb-4" id="ratingStatsBox" style="display:none;">
 		  <h4 class="section-title">별점 분포</h4>
 		  <div id="ratingStatsInner"></div>
 		</div>
         
-		<%-- ???덇퀬??--%>
+		<%-- 예고편 영역 --%>
 		<c:if test="${not empty videos}">
 		<div class="content-card mb-4">
 		  <h4 class="section-title">예고편 / 영상</h4>
@@ -696,6 +813,9 @@
 		       <iframe
 				  src="https://www.youtube.com/embed/${video.key}"
 				  title="${video.name}"
+				  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+				  allowfullscreen
+				  referrerpolicy="strict-origin-when-cross-origin"
 				  style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;">
 				</iframe>
 		      </div>
@@ -706,7 +826,7 @@
 		</div>
 		</c:if>
 		
-		<%-- ??異쒖뿰吏?--%>
+		<%-- 출연진 영역 --%>
 		<c:if test="${not empty cast}">
 			<div class="content-card mb-4">
 			  <h4 class="section-title">출연진</h4>
@@ -719,7 +839,7 @@
 			          <c:when test="${not empty actor['profile_path']}">
 			            <img src="https://image.tmdb.org/t/p/w185${actor['profile_path']}"
 			                 style="width:100%;height:180px;object-fit:cover;object-position:top;display:block;background:#1d1d1d;"
-			                 onerror="this.src='https://via.placeholder.com/185x180?text=No+Image'">
+			                 onerror="this.src='https://placehold.co/185x180?text=No+Image'">
 			          </c:when>
 			          <c:otherwise>
 			            <div style="width:100%;height:180px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;">
@@ -738,7 +858,7 @@
 			</div>
 			</c:if>
 		
-		<%-- ???ㅽ깭??--%>
+		<%-- 스태프 영역 --%>
 		<c:if test="${not empty crew}">
 		<div class="content-card mb-4">
 		  <h4 class="section-title">스태프</h4>
@@ -775,7 +895,7 @@
             <c:when test="${not empty sessionScope.loginUser}">
               <c:choose>
 
-                <%-- ?대? 由щ럭 ?묒꽦??寃쎌슦 --%>
+                <%-- 이미 리뷰를 작성한 경우 --%>
                 <c:when test="${not empty myReview}">
                   <div class="review-card mb-4" id="myReviewBox">
                     <div class="my-review-top">
@@ -813,10 +933,10 @@
                       </div>
                     </div>
 
-                    <div class="review-body mb-0">${myReview.content}</div>
+                    <div class="review-body mb-0">${fn:escapeXml(myReview.content)}</div>
                   </div>
 
-                  <!-- ?섏젙 ??-->
+                  <!-- 리뷰 수정 폼 -->
                   <div class="review-card mb-4" id="editForm" style="display:none;">
                     <div class="mb-3">
                       <label class="form-label">별점 수정</label>
@@ -833,7 +953,7 @@
                     <div class="mb-3">
                       <label class="form-label">리뷰 내용 수정</label>
                       <textarea class="form-control"
-                                id="editContent" rows="5">${myReview.content}</textarea>
+                                id="editContent" rows="5">${fn:escapeXml(myReview.content)}</textarea>
                     </div>
 
                     <div class="form-check mb-4">
@@ -851,7 +971,7 @@
                   </div>
                 </c:when>
 
-                <%-- 由щ럭 誘몄옉??--%>
+                <%-- 아직 리뷰를 작성하지 않은 경우 --%>
                 <c:otherwise>
                   <div class="review-card mb-4">
                     <div class="mb-3">
@@ -923,7 +1043,7 @@
 		  <h4 class="section-title">비슷한 영화</h4>
 		  <div class="row g-3" id="similarList"></div>
 		</div>
-      <!-- ?ㅻⅨ履??뺣낫 -->
+      <!-- 오른쪽 정보 영역 -->
       <div class="col-lg-4">
         <div class="info-card">
           <div class="info-title">영화 정보</div>
@@ -972,7 +1092,7 @@
     </div>
   </div>
 </div>
-<%-- 而щ젆??異붽? 紐⑤떖 --%>
+<%-- 컬렉션 추가 모달 --%>
 <c:if test="${not empty sessionScope.loginUser}">
 <div class="modal fade" id="collectionModal" tabindex="-1">
   <div class="modal-dialog">
@@ -1028,13 +1148,19 @@ var editRating = ${not empty myReview ? myReview.rating : 0};
 var tmdbId = ${movie.tmdbId};
 var ctp = '${ctp}';
 var loginUserNo = ${not empty sessionScope.loginUser ? sessionScope.loginUser.userNo : 0};
+var isAdmin = ${not empty sessionScope.loginUser and sessionScope.loginUser.userRole eq 'ADMIN'};
 var currentSort = 'latest';
+
+function escapeHtml(value) {
+    return $('<div>').text(value == null ? '' : String(value)).html();
+}
 
 $(document).ready(function() {
     loadReviews();
     setEditRating(editRating);
+    refreshCollectionState();
 
-    // ?? textarea ?ㅼ떆媛?泥댄겕 ??
+    // 리뷰 textarea 실시간 길이 체크
     $('#content').on('input', function() {
         var len = $(this).val().trim().length;
         $('#contentCount').text(len + ' / 2000');
@@ -1047,9 +1173,9 @@ $(document).ready(function() {
         } else {
             $('#contentMsg').html('<span class="text-success">작성 가능합니다.</span>');
         }
-    }); // ??on('input') ?ш린???ロ옒
+    });
 
-    // ?? 遊ㅼ뼱??珥덇린 ?곹깭 ?뺤씤 ??
+    // 봤어요 초기 상태 확인
     $.get(ctp + '/movie/watched/check', { movieNo: tmdbId }, function(res) {
         if (res.watched) {
             $('#watchedBtn').removeClass('btn-outline-info').addClass('btn-info');
@@ -1057,7 +1183,7 @@ $(document).ready(function() {
         }
     }, 'json');
 
-    // ?? 蹂꾩젏 遺꾪룷 濡쒕뱶 ??
+    // 별점 분포 로드
    $.get(ctp + '/review/stats', { movieNo: tmdbId }, function(list) {
 	    if (!list || list.length === 0) return;
 	    var data = list[0];
@@ -1083,7 +1209,7 @@ $(document).ready(function() {
         $('#ratingStatsBox').show();
     }, 'json');
 
-    // ?? 鍮꾩듂???곹솕 濡쒕뱶 ??
+    // 비슷한 영화 로드
     $.get(ctp + '/movie/similar', { tmdbId: tmdbId, page: 1 }, function(list) {
         if (!list || list.length === 0) return;
         var show = list.slice(0, 6);
@@ -1109,9 +1235,9 @@ $(document).ready(function() {
         }
     }, 'json');
 
-}); // ??document.ready ?ш린???ロ옒
+});
 
-/* ?? 蹂꾩젏 ?좏깮 ?? */
+/* 별점 선택 */
 function setRating(val) {
     currentRating = val;
     $('#rating').val(val);
@@ -1146,7 +1272,7 @@ function setEditRating(val) {
 function showEditForm() { $('#myReviewBox').hide(); $('#editForm').show(); }
 function hideEditForm()  { $('#editForm').hide();   $('#myReviewBox').show(); }
 
-/* ?? 由щ럭 ?깅줉 ?? */
+/* 리뷰 등록 */
 function submitReview() {
     var rating  = $('#rating').val();
     var content = $('#content').val();
@@ -1186,7 +1312,7 @@ function submitReview() {
     });
 }
 
-/* ?? 由щ럭 ?섏젙 ?? */
+/* 리뷰 수정 */
 function updateReview(reviewNo) {
     var rating  = $('#editRating').val();
     var content = $('#editContent').val();
@@ -1213,7 +1339,7 @@ function updateReview(reviewNo) {
     });
 }
 
-/* ?? 由щ럭 ??젣 ?? */
+/* 리뷰 삭제 */
 function deleteReview(reviewNo) {
     Swal.fire({
         icon: 'warning', title: '리뷰 삭제',
@@ -1240,7 +1366,7 @@ function deleteReview(reviewNo) {
     });
 }
 
-/* ?? 由щ럭 紐⑸줉 ?? */
+/* 리뷰 목록 로드 */
 function loadReviews() {
     $.ajax({
         url: ctp + '/review/list', type: 'GET',
@@ -1249,7 +1375,7 @@ function loadReviews() {
     });
 }
 
-/* ?? 由щ럭 ?뚮뜑留?(?뺣젹 怨듭슜) ?? */
+/* 리뷰 렌더링 */
 function renderReviews(list) {
     var blindReviewMessage = '\uC2E0\uACE0\uB85C \uC778\uD574 \uBE14\uB77C\uC778\uB4DC \uCC98\uB9AC\uB41C \uB9AC\uBDF0\uC785\uB2C8\uB2E4.';
     var html = '';
@@ -1261,22 +1387,23 @@ function renderReviews(list) {
             for (var i = 1; i <= 5; i++) {
                 stars += i <= r.rating ? '<span class="text-warning">★</span>' : '<span class="text-secondary">☆</span>';
             }
-            var userInitial = r.userName ? r.userName.substring(0,1) : '?';
+            var userName = r.userName || '';
+            var userInitial = userName ? userName.substring(0,1) : '?';
             html += '<div class="review-item">';
             html += '<div class="review-header">';
             html += '<div class="review-user">';
-            html += '<div class="avatar-circle">' + userInitial + '</div>';
-            html += '<div><div class="fw-bold">' + r.userName + '</div>';
+            html += '<div class="avatar-circle">' + escapeHtml(userInitial) + '</div>';
+            html += '<div><div class="fw-bold">' + escapeHtml(userName) + '</div>';
             html += '<div class="review-stars">' + stars;
             html += '<span class="text-secondary small ms-2">' + r.rating + '점</span></div></div></div>';
-            html += '<small class="text-secondary">' + r.regDate + '</small></div>';
+            html += '<small class="text-secondary">' + escapeHtml(r.regDate || '') + '</small></div>';
             if (r.spoiler == 1) {
                 html += '<div class="spoiler-badge mb-3"><i class="fa fa-exclamation-triangle"></i> 스포일러 포함</div>';
             }
             if (r.content === blindReviewMessage) {
                 html += '<div class="review-body blind-review"><i class="fa fa-eye-slash"></i> 블라인드 처리된 리뷰</div>';
             } else {
-                html += '<div class="review-body">' + r.content + '</div>';
+                html += '<div class="review-body">' + escapeHtml(r.content) + '</div>';
             }
             html += '<div class="review-actions">';
             if (loginUserNo != 0 && r.userNo == loginUserNo) {
@@ -1286,9 +1413,12 @@ function renderReviews(list) {
             } else {
                 html += '<button class="btn btn-outline-secondary btn-sm" onclick="toggleLike(' + r.reviewNo + ', this)">';
                 html += '<i class="fa fa-thumbs-up"></i> <span class="like-cnt">' + r.likeCnt + '</span></button>';
-                if (loginUserNo != 0) {
+                if (loginUserNo != 0 && !isAdmin) {
                     html += '<button class="btn btn-outline-danger btn-sm ms-1" onclick="reportReview(' + r.reviewNo + ')">';
                     html += '<i class="fa fa-flag"></i></button>';
+                }
+                if (isAdmin) {
+                    html += '<button class="btn btn-outline-danger btn-sm ms-1" onclick="deleteReview(' + r.reviewNo + ')">삭제</button>';
                 }
             }
             html += '</div>';
@@ -1305,31 +1435,85 @@ function renderReviews(list) {
     $('#reviewList').html(html);
 }
 
-/* ?? ?볤? 紐⑸줉 ?? */
+/* 댓글 목록 로드 */
+function renderCommentItem(c, isReply, reviewNo) {
+    var html = '<div class="comment-item' + (isReply ? ' comment-reply' : '') + '" id="comment-' + c.commentNo + '">';
+    html += '<div class="comment-main">';
+    if (isReply && c.parentUserName) {
+        html += '<span class="reply-mark">↳ @' + escapeHtml(c.parentUserName) + '</span>';
+    }
+    html += '<span class="comment-author">' + escapeHtml(c.userName) + '</span>';
+    html += '<span class="comment-text" id="commentText-' + c.commentNo + '">' + escapeHtml(c.content) + '</span>';
+    html += '</div><div class="comment-actions">';
+    if (loginUserNo != 0 && !isReply) {
+        html += '<span class="comment-link" onclick="toggleReplyBox(' + c.commentNo + ', ' + reviewNo + ')">답글</span>';
+    }
+    if (loginUserNo != 0 && c.userNo == loginUserNo) {
+        html += '<span class="comment-link" onclick="editComment(' + c.commentNo + ')">수정</span>';
+    }
+    if (loginUserNo != 0 && (c.userNo == loginUserNo || isAdmin)) {
+        html += '<span class="comment-link" onclick="deleteComment(' + c.commentNo + ', ' + reviewNo + ')">삭제</span>';
+    }
+    html += '</div></div>';
+    return html;
+}
+
+function renderReplyBox(parentCommentNo, reviewNo) {
+    if (loginUserNo == 0) return '';
+
+    var html = '<div class="reply-box" id="replyBox-' + parentCommentNo + '" style="display:none;">';
+    html += '<div class="reply-editor">';
+    html += '<input type="text" class="form-control form-control-sm" id="replyInput-' + parentCommentNo + '" placeholder="답글을 입력하세요.." maxlength="500">';
+    html += '<button class="btn btn-outline-success btn-sm" onclick="writeReply(' + parentCommentNo + ', ' + reviewNo + ')">등록</button>';
+    html += '<button class="btn btn-outline-secondary btn-sm" onclick="toggleReplyBox(' + parentCommentNo + ', ' + reviewNo + ')">닫기</button>';
+    html += '</div></div>';
+    return html;
+}
+
+function toggleReplyBox(parentCommentNo, reviewNo) {
+    var $box = $('#replyBox-' + parentCommentNo);
+    var isVisible = $box.is(':visible');
+    $('#commentList-' + reviewNo + ' .reply-box').hide();
+    if (isVisible) {
+        return;
+    }
+    $box.show();
+    $('#replyInput-' + parentCommentNo).focus();
+}
+
 function loadComments(reviewNo) {
     $.ajax({
         url: ctp + '/comment/list', type: 'GET',
         data: { reviewNo: reviewNo },
         success: function(list) {
+            var tops = [];
+            var repliesByParent = {};
             var html = '';
+
             list.forEach(function(c) {
-                html += '<div class="comment-item" id="comment-' + c.commentNo + '">';
-                html += '<div class="comment-main">';
-                html += '<span class="comment-author">' + c.userName + '</span>';
-                html += '<span class="comment-text" id="commentText-' + c.commentNo + '">' + c.content + '</span>';
-                html += '</div><div class="d-flex gap-2">';
-                if (loginUserNo != 0 && c.userNo == loginUserNo) {
-                    html += '<span class="comment-link" onclick="editComment(' + c.commentNo + ')">수정</span>';
-                    html += '<span class="comment-link" onclick="deleteComment(' + c.commentNo + ', ' + reviewNo + ')">삭제</span>';
+                if (c.parentId == null) {
+                    tops.push(c);
                 }
-                html += '</div></div>';
+                else {
+                    if (!repliesByParent[c.parentId]) repliesByParent[c.parentId] = [];
+                    repliesByParent[c.parentId].push(c);
+                }
             });
+
+            tops.forEach(function(c) {
+                html += renderCommentItem(c, false, reviewNo);
+                (repliesByParent[c.commentNo] || []).forEach(function(reply) {
+                    html += renderCommentItem(reply, true, reviewNo);
+                });
+                html += renderReplyBox(c.commentNo, reviewNo);
+            });
+
             $('#commentList-' + reviewNo).html(html);
         }
     });
 }
 
-/* ?? ?볤? ?깅줉 ?? */
+/* 댓글 등록 */
 function writeComment(reviewNo) {
     var content = $('#commentInput-' + reviewNo).val();
     if (!content.trim()) {
@@ -1346,12 +1530,38 @@ function writeComment(reviewNo) {
             } else if (res == 'login') {
                 Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
                     .then(() => location.href = ctp + '/user/login');
+            } else {
+                Swal.fire({ icon: 'error', title: '등록 실패', text: '댓글 등록에 실패했습니다.' });
             }
         }
     });
 }
 
-/* ?? ?볤? ?섏젙 ?? */
+/* 답글 등록 */
+function writeReply(parentCommentNo, reviewNo) {
+    var content = $('#replyInput-' + parentCommentNo).val();
+    if (!content.trim()) {
+        Swal.fire({ icon: 'warning', title: '내용 필요', text: '답글 내용을 입력해주세요.', timer: 1500, showConfirmButton: false });
+        return;
+    }
+
+    $.ajax({
+        url: ctp + '/comment/write', type: 'POST',
+        data: { reviewNo: reviewNo, parentId: parentCommentNo, content: content },
+        success: function(res) {
+            if (res == 'ok') {
+                loadComments(reviewNo);
+            } else if (res == 'login') {
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                    .then(() => location.href = ctp + '/user/login');
+            } else {
+                Swal.fire({ icon: 'error', title: '등록 실패', text: '답글 등록에 실패했습니다.' });
+            }
+        }
+    });
+}
+
+/* 댓글 수정 */
 function editComment(commentNo) {
     var current = $('#commentText-' + commentNo).text();
     Swal.fire({
@@ -1377,7 +1587,7 @@ function editComment(commentNo) {
     });
 }
 
-/* ?? ?볤? ??젣 ?? */
+/* 댓글 삭제 */
 function deleteComment(commentNo, reviewNo) {
     Swal.fire({
         icon: 'warning', title: '댓글 삭제', text: '댓글을 삭제하시겠습니까?',
@@ -1390,14 +1600,15 @@ function deleteComment(commentNo, reviewNo) {
             url: ctp + '/comment/delete', type: 'POST',
             data: { commentNo: commentNo },
             success: function(res) {
-                if (res == 'ok') $('#comment-' + commentNo).remove();
+                if (res == 'ok') loadComments(reviewNo);
+                else if (res == 'auth') Swal.fire({ icon: 'error', title: '권한 없음', text: '삭제 권한이 없습니다.' });
                 else Swal.fire({ icon: 'error', title: '삭제 실패', timer: 1200, showConfirmButton: false });
             }
         });
     });
 }
 
-/* ?? 李쒗븯湲??? */
+/* 찜하기 토글 */
 function toggleWatchlist() {
     $.ajax({
         url: ctp + '/movie/watchlist', type: 'POST',
@@ -1417,7 +1628,7 @@ function toggleWatchlist() {
     });
 }
 
-/* ?? 怨듦컧 ?좉? ?? */
+/* 리뷰 공감 토글 */
 function toggleLike(reviewNo, btn) {
     <c:choose>
         <c:when test="${not empty sessionScope.loginUser}">
@@ -1447,116 +1658,68 @@ function toggleLike(reviewNo, btn) {
     </c:choose>
 }
 
-/* ?? 而щ젆??紐⑤떖 ?닿린 ?? */
+/* 컬렉션 모달 열기 */
 function openCollectionModal() {
     var modal = new bootstrap.Modal(document.getElementById('collectionModal'));
     modal.show();
-    $.get(ctp + '/collection/my', function(list) {
-        if (list.length === 0) {
-            $('#collectionModalBody').html(
-                '<p class="text-secondary text-center">컬렉션이 없습니다. ' +
-                '<a href="' + ctp + '/collection/list" class="text-warning">만들러 가기</a></p>'
-            );
-            return;
-        }
-        var html = '<div class="list-group">';
-        list.forEach(function(c) {
-            html += '<button class="list-group-item list-group-item-action bg-dark text-white border-secondary"';
-            html += ' onclick="addToCollection(' + c.collectionId + ', this)">';
-            html += '<div class="d-flex justify-content-between align-items-center">';
-            html += '<span>' + c.title + '</span>';
-            html += '<span class="col-check"></span>';
-            html += '<small class="text-secondary ms-2">' + c.movieCount + '편</small>';
-            html += '</div></button>';
-        });
-        html += '</div>';
-        $('#collectionModalBody').html(html);
-    }, 'json');
+    loadCollectionModal();
 }
 
-/* ?? 而щ젆???곹솕 異붽?/?쒓굅 ?? */
+/* 컬렉션 영화 추가/제거 */
 function addToCollection(collectionId, btn) {
     $.post(ctp + '/collection/movie/toggle',
         { collectionId: collectionId, movieId: tmdbId },
         function(res) {
             if (res.status === 'added') {
-                $(btn).addClass('active');
-                $(btn).find('.col-check').text('✓');
+                updateCollectionItemState(btn, true);
+                updateCollectionButtonState(true);
             } else if (res.status === 'removed') {
-                $(btn).removeClass('active');
-                $(btn).find('.col-check').text('');
+                updateCollectionItemState(btn, false);
+                syncCollectionButtonStateFromModal();
+            } else if (res.status === 'fail') {
+                Swal.fire({ icon: 'warning', title: '추가 실패', text: '유효한 영화만 컬렉션에 담을 수 있습니다.' });
             } else if (res.status === 'login') {
                 Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' });
             }
         }, 'json');
 }
 
-/* ?? 由щ럭 ?좉퀬 ?? */
-function reportReview(reviewNo) {
-    document.getElementById('reportTargetId').value = reviewNo;
-    document.getElementById('reportReason').value = '';
-    new bootstrap.Modal(document.getElementById('reportModal')).show();
-}
-
-function submitReport() {
-    var targetId = document.getElementById('reportTargetId').value;
-    var reason   = document.getElementById('reportReason').value.trim();
-    if (!reason) {
-        Swal.fire({ icon: 'warning', title: '사유 필요', text: '신고 사유를 입력해주세요.' });
-        return;
-    }
-    $.post(ctp + '/report/insert',
-        { targetType: 'REVIEW', targetId: targetId, reason: reason },
-        function(res) {
-            document.activeElement.blur();
-            var modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
-            modal.hide();
-            if (res.status === 'ok') {
-                Swal.fire({ icon: 'success', title: '신고 접수', text: '신고가 접수되었습니다.', timer: 1500, showConfirmButton: false });
-            } else if (res.status === 'dup') {
-                Swal.fire({ icon: 'info', title: '중복 신고', text: '이미 신고한 리뷰입니다.' });
-            } else if (res.status === 'login') {
-                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' });
-            } else {
-                Swal.fire({ icon: 'error', title: '신고 실패', text: '신고 접수에 실패했습니다.' });
-            }
-        }, 'json');
-}
-function toggleWatched() {
-    $.post(ctp + '/movie/watched/toggle', { movieNo: tmdbId }, function(res) {
-        if (res.status === 'added') {
-            $('#watchedBtn').removeClass('btn-outline-info').addClass('btn-info');
-            $('#watchedBtnText').text('봤어요 ✓');
-        } else if (res.status === 'removed') {
-            $('#watchedBtn').removeClass('btn-info').addClass('btn-outline-info');
-            $('#watchedBtnText').text('봤어요');
-        } else if (res.status === 'login') {
-            Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-                .then(() => location.href = ctp + '/user/login');
-        }
+function refreshCollectionState() {
+    if (!document.getElementById('collectionBtn')) return;
+    $.get(ctp + '/collection/my', { movieId: tmdbId }, function(list) {
+        renderCollectionModal(list);
+        updateCollectionButtonState(hasAnyCollectionSelection(list));
     }, 'json');
 }
-function sortReviews(sort, btn) {
-    currentSort = sort;
-    // ???ㅽ????꾪솚
-    document.querySelectorAll('.sort-btn').forEach(function(b) {
-        b.style.background = 'rgba(255,255,255,0.08)';
-        b.style.color = '#aaa';
-        b.style.border = '1px solid rgba(255,255,255,0.15)';
-    });
-    btn.style.background = '#28a745';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
 
-    $.get(ctp + '/review/list/sorted',
-        { movieNo: tmdbId, sort: sort },
-        function(list) {
-            renderReviews(list);
-        }, 'json');
+function loadCollectionModal() {
+    $.get(ctp + '/collection/my', { movieId: tmdbId }, function(list) {
+        renderCollectionModal(list);
+        updateCollectionButtonState(hasAnyCollectionSelection(list));
+    }, 'json');
 }
-</script>
 
-</body>
-</html>
+function renderCollectionModal(list) {
+    if (!list || list.length === 0) {
+        $('#collectionModalBody').html(
+            '<p class="text-secondary text-center">컬렉션이 없습니다. ' +
+            '<a href="' + ctp + '/collection/list" class="text-warning">만들러 가기</a></p>'
+        );
+        updateCollectionButtonState(false);
+        return;
+    }
 
+    var html = '<div class="list-group">';
+    list.forEach(function(c) {
+        var activeClass = c.inCollection ? ' active border-warning' : '';
+        var actionText = c.inCollection ? '컬렉션 삭제' : '컬렉션 추가';
+        var checkText = c.inCollection ? '✓' : '';
 
+        html += '<button class="list-group-item list-group-item-action bg-dark text-white border-secondary collection-item' + activeClass + '"';
+        html += ' data-in-collection="' + (c.inCollection ? 'true' : 'false') + '"';
+        html += ' onclick="addToCollection(' + c.collectionId + ', this)">';
+        html += '<div class="d-flex justify-content-between align-items-center gap-2">';
+        html += '<span>' + escapeHtml(c.title) + '</span>';
+        html += '<div class="d-flex align-items-center gap-2">';
+        html += '<span class="col-action badge text-bg-warning">' + actionText + '</span>';
+        html += '<span class="col-check">' + checkText + '</span>'

@@ -21,4 +21,7 @@ public interface WatchedDAO {
 
     // 내가 봤어요 한 영화 목록
     List<WatchedVO> selectMyWatched(@Param("mid") String mid);
+
+    // 회원 탈퇴 시 봤어요 전체 삭제
+    int deleteWatchedByMid(@Param("mid") String mid);
 }

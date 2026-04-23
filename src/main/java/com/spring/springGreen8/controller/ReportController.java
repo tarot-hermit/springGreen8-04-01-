@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.spring.springGreen8.dao.ReportDAO;
+import com.spring.springGreen8.service.ReportService;
 import com.spring.springGreen8.vo.ReportVO;
 import com.spring.springGreen8.vo.UserVO;
 
@@ -21,17 +21,15 @@ import com.spring.springGreen8.vo.UserVO;
 public class ReportController {
 
     @Autowired
-    private ReportDAO reportDAO;
+    private ReportService reportService;
 
-    // 신고 등록 (Ajax)
     @RequestMapping(value = "/insert", method = RequestMethod.POST,
                     produces = "application/json; charset=utf-8")
     @ResponseBody
-    public Map<String, Object> insertReport(
-            @RequestParam String targetType,
-            @RequestParam int    targetId,
-            @RequestParam String reason,
-            HttpSession session) {
+    public Map<String, Object> insertReport(@RequestParam String targetType,
+                                            @RequestParam int targetId,
+                                            @RequestParam String reason,
+                                            HttpSession session) {
 
         Map<String, Object> result = new HashMap<>();
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
@@ -48,23 +46,21 @@ public class ReportController {
             return result;
         }
 
-        // 중복 신고 확인
-        int dup = reportDAO.checkDuplicate(loginUser.getUserId(), targetType, targetId);
-        if (dup > 0) {
-            result.put("status", "dup");
-            result.put("msg", "이미 신고한 항목입니다.");
-            return result;
-        }
-
         ReportVO vo = new ReportVO();
         vo.setReporterMid(loginUser.getUserId());
         vo.setTargetType(targetType);
         vo.setTargetId(targetId);
         vo.setReason(reason.trim());
 
-        int res = reportDAO.insertReport(vo);
-        result.put("status", res > 0 ? "ok" : "fail");
-        result.put("msg",    res > 0 ? "신고가 접수되었습니다." : "신고 접수에 실패했습니다.");
+        String status = reportService.createReport(vo);
+        result.put("status", status);
+        if ("dup".equals(status)) {
+            result.put("msg", "이미 신고한 항목입니다.");
+        } else if ("ok".equals(status)) {
+            result.put("msg", "신고가 접수되었습니다.");
+        } else {
+            result.put("msg", "신고 접수에 실패했습니다.");
+        }
         return result;
     }
 }

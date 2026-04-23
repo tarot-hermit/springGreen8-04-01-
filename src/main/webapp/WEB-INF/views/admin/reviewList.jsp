@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="blindReviewMessage" value="신고로 인해 블라인드 처리된 리뷰입니다."/>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
@@ -9,6 +10,7 @@
   <meta charset="UTF-8">
   <title>리뷰 관리</title>
   <%@ include file="/WEB-INF/views/common/bs5.jsp" %>
+  <%@ include file="/WEB-INF/views/admin/adminSwal.jspf" %>
   <style>
     body { background:#0f172a; color:#fff; }
     .sidebar { width:220px; background:#1e293b; padding:24px 0; flex-shrink:0; position:fixed; top:0; left:0; height:100vh; z-index:100; }
@@ -70,18 +72,23 @@
             <td>
               <a href="${ctp}/movie/detail/${r.tmdbId}"
                  style="color:#60a5fa;text-decoration:none;font-weight:600;"
-                 title="${empty r.movieTitle ? 'TMDB ID' : r.movieTitle}">
+                 title="${fn:escapeXml(empty r.movieTitle ? 'TMDB ID' : r.movieTitle)}">
                 ${r.tmdbId}
               </a>
             </td>
-            <td>${empty r.userName ? r.userNo : r.userName}</td>
+            <td>
+              <c:choose>
+                <c:when test="${empty r.userName}">${r.userNo}</c:when>
+                <c:otherwise>${fn:escapeXml(r.userName)}</c:otherwise>
+              </c:choose>
+            </td>
             <td class="text-warning fw-bold">${r.rating}★</td>
-            <td class="content-cell" title="${r.content}">
+            <td class="content-cell" title="${fn:escapeXml(r.content)}">
               <c:choose>
                 <c:when test="${r.content == blindReviewMessage}">
                   <span class="blind-review-chip"><i class="fa fa-eye-slash"></i> 블라인드 처리된 리뷰</span>
                 </c:when>
-                <c:otherwise>${r.content}</c:otherwise>
+                <c:otherwise>${fn:escapeXml(r.content)}</c:otherwise>
               </c:choose>
             </td>
             <td style="color:#64748b;">${r.likeCnt}</td>
@@ -111,10 +118,24 @@ function filterTable() {
 }
 
 function deleteReview(reviewNo) {
-    if (!confirm('해당 리뷰를 삭제하시겠습니까?')) return;
-    $.post(ctp + '/admin/review/delete', { reviewId: reviewNo }, function(res) {
-        if (res === 'ok') { $('#row-' + reviewNo).remove(); }
-        else alert('실패했습니다.');
+    adminDangerConfirm({
+        title: '\uB9AC\uBDF0 \uC0AD\uC81C',
+        text: '\uD574\uB2F9 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?',
+        confirmButtonText: '\uB9AC\uBDF0 \uC0AD\uC81C'
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+
+        $.post(ctp + '/admin/review/delete', { reviewId: reviewNo }, function(res) {
+            if (res === 'ok') {
+                $('#row-' + reviewNo).remove();
+                adminToast('success', '\uB9AC\uBDF0\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.');
+            }
+            else {
+                adminAlert('error', '\uC0AD\uC81C \uC2E4\uD328', '\uB9AC\uBDF0 \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
+            }
+        }).fail(function() {
+            adminAlert('error', '\uC694\uCCAD \uC2E4\uD328', '\uB9AC\uBDF0 \uC0AD\uC81C \uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.');
+        });
     });
 }
 </script>

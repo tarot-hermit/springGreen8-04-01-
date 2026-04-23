@@ -9,6 +9,8 @@
         <result property="mid"       column="mid"/>
         <result property="movieId"   column="movie_id"/>
         <result property="regDate"   column="reg_date"/>
+        <result property="title"     column="title"/>
+        <result property="posterPath" column="poster_path"/>
     </resultMap>
 
     <!-- 봤어요 추가 (중복 시 무시) -->
@@ -34,10 +36,23 @@
 
     <!-- 내 봤어요 목록 -->
     <select id="selectMyWatched" resultMap="watchedResultMap">
-        SELECT watched_id, mid, movie_id, reg_date
-        FROM watched
-        WHERE mid = #{mid}
-        ORDER BY reg_date DESC
+        SELECT
+            w.watched_id,
+            w.mid,
+            w.movie_id,
+            w.reg_date,
+            m.title,
+            m.poster_path
+        FROM watched w
+        LEFT JOIN movie m
+               ON w.movie_id = m.tmdb_id
+        WHERE w.mid = #{mid}
+        ORDER BY w.reg_date DESC
     </select>
+
+    <delete id="deleteWatchedByMid">
+        DELETE FROM watched
+        WHERE mid = #{mid}
+    </delete>
 
 </mapper>

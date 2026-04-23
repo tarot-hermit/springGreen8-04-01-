@@ -94,7 +94,7 @@ public class ReviewController {
         boolean isAdmin = "ADMIN".equals(loginUser.getUserRole());
         if (!isOwner && !isAdmin) return "auth";
 
-        vo.setUserNo(loginUser.getUserNo());
+        vo.setUserNo(original.getUserNo());
         int result = reviewService.deleteReview(vo);
         return result > 0 ? "ok" : "fail";
     }

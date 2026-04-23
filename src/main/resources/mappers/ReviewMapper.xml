@@ -21,10 +21,10 @@
             r.spoiler    AS spoiler,
             r.like_cnt   AS likeCnt,
             r.reg_date   AS regDate,
-            u.user_name  AS userName,
-            u.user_img   AS userImg
+            COALESCE(u.user_name, '탈퇴한 사용자') AS userName,
+            COALESCE(u.user_img, 'default.png') AS userImg
         FROM review r
-        JOIN users u ON r.user_no = u.user_no
+        LEFT JOIN users u ON r.user_no = u.user_no
         WHERE r.movie_no = #{movieNo}
         ORDER BY r.reg_date DESC
     </select>
@@ -108,6 +108,26 @@
 	    )
 	    WHERE review_no = #{reviewNo}
 	</update>
+
+    <delete id="deleteLikesByUserNo" parameterType="int">
+        DELETE FROM review_like
+        WHERE user_no = #{userNo}
+    </delete>
+
+    <update id="reassignReviewsToUser">
+        UPDATE review
+        SET user_no = #{toUserNo}
+        WHERE user_no = #{fromUserNo}
+    </update>
+
+    <update id="refreshAllLikeCounts">
+        UPDATE review r
+        SET like_cnt = (
+            SELECT COUNT(*)
+            FROM review_like rl
+            WHERE rl.review_no = r.review_no
+        )
+    </update>
 	
 	<!-- 리뷰 단건 조회 -->
 	<select id="selectReviewByNo" parameterType="int" resultType="ReviewVO">
@@ -117,6 +137,7 @@
 	        user_no   AS userNo,
 	        rating    AS rating,
 	        content   AS content,
+	        spoiler   AS spoiler,
 	        like_cnt  AS likeCnt
 	    FROM review
 	    WHERE review_no = #{reviewNo}
@@ -144,17 +165,17 @@
 	        r.spoiler,
 	        r.like_cnt  AS likeCnt,
 	        r.reg_date  AS regDate,
-	        u.user_name AS userName,
-	        u.user_img  AS userImg
+	        COALESCE(u.user_name, '탈퇴한 사용자') AS userName,
+	        COALESCE(u.user_img,  'default.png')  AS userImg
 	    FROM review r
-	    JOIN users u ON r.user_no = u.user_no
+	    LEFT JOIN users u ON r.user_no = u.user_no
 	    WHERE r.movie_no = #{movieNo}
 	    <choose>
 	        <when test="sort == 'rating_high'">ORDER BY r.rating DESC, r.reg_date DESC</when>
-	        <when test="sort == 'rating_low'"> ORDER BY r.rating ASC,  r.reg_date DESC</when>
-	        <when test="sort == 'like'">       ORDER BY r.like_cnt DESC, r.reg_date DESC</when>
-	        <otherwise>                        ORDER BY r.reg_date DESC</otherwise>
+	        <when test="sort == 'rating_low'">ORDER BY r.rating ASC,  r.reg_date DESC</when>
+	        <when test="sort == 'likes'">ORDER BY r.like_cnt DESC, r.reg_date DESC</when>
+	        <otherwise>ORDER BY r.reg_date DESC</otherwise>
 	    </choose>
 	</select>
-	
+
 </mapper>

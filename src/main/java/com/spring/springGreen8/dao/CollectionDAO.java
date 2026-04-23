@@ -14,7 +14,8 @@ public interface CollectionDAO {
     int insertCollection(CollectionVO vo);
 
     // 내 컬렉션 목록
-    List<CollectionVO> selectMyCollections(@Param("mid") String mid);
+    List<CollectionVO> selectMyCollections(@Param("mid") String mid,
+                                           @Param("movieId") Integer movieId);
 
     // 공개 컬렉션 목록 (탐색 페이지)
     List<CollectionVO> selectPublicCollections();
@@ -43,4 +44,7 @@ public interface CollectionDAO {
     // 영화가 컬렉션에 있는지 확인
     int checkCollectionMovie(@Param("collectionId") int collectionId,
                              @Param("movieId")      int movieId);
+
+    // 회원 탈퇴 시 해당 회원 컬렉션 전체 삭제
+    int deleteCollectionsByMid(@Param("mid") String mid);
 }

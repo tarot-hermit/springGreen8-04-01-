@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -8,6 +9,7 @@
   <meta charset="UTF-8">
   <title>회원 관리</title>
   <%@ include file="/WEB-INF/views/common/bs5.jsp" %>
+  <%@ include file="/WEB-INF/views/admin/adminSwal.jspf" %>
   <style>
     body { background:#0f172a; color:#fff; }
     .sidebar { width:220px; background:#1e293b; padding:24px 0; flex-shrink:0; position:fixed; top:0; left:0; height:100vh; z-index:100; }
@@ -65,9 +67,9 @@
           <c:forEach var="u" items="${users}" varStatus="st">
           <tr id="row-${u.userNo}">
             <td style="color:#475569;">${st.index+1}</td>
-            <td style="font-weight:600;">${u.userId}</td>
-            <td>${u.userName}</td>
-            <td style="color:#64748b;">${u.userEmail}</td>
+            <td style="font-weight:600;">${fn:escapeXml(u.userId)}</td>
+            <td>${fn:escapeXml(u.userName)}</td>
+            <td style="color:#64748b;">${fn:escapeXml(u.userEmail)}</td>
             <td>
               <span class="role-badge ${u.userRole == 'ADMIN' ? 'role-admin' : 'role-user'}">
                 ${u.userRole}
@@ -107,18 +109,64 @@ function filterTable() {
 }
 
 function changeRole(userNo, userRole) {
-    if (!confirm(userRole + ' 권한으로 변경하시겠습니까?')) return;
-    $.post(ctp + '/admin/user/role', { userNo: userNo, userRole: userRole }, function(res) {
-        if (res === 'ok') { alert('변경되었습니다.'); location.reload(); }
-        else alert('실패했습니다.');
+    var roleLabel = userRole === 'ADMIN' ? '\uAD00\uB9AC\uC790' : '\uC77C\uBC18 \uD68C\uC6D0';
+    adminConfirm({
+        title: '\uAD8C\uD55C \uBCC0\uACBD',
+        text: roleLabel + ' \uAD8C\uD55C\uC73C\uB85C \uBCC0\uACBD\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?',
+        confirmButtonText: '\uBCC0\uACBD'
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+
+        $.post(ctp + '/admin/user/role', { userNo: userNo, userRole: userRole }, function(res) {
+            var status = typeof res === 'string' ? res : (res && res.status ? res.status : '');
+            if (status === 'ok') {
+                adminToast('success', '\uAD8C\uD55C\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4.').then(function() {
+                    location.reload();
+                });
+            }
+            else if (status === 'self_downgraded') {
+                adminAlert('info', '\uAD8C\uD55C \uD574\uC81C\uB428', '\uAD00\uB9AC\uC790 \uAD8C\uD55C\uC774 \uD574\uC81C\uB418\uC5B4 \uBA54\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4.').then(function() {
+                    location.href = ctp + '/';
+                });
+            }
+            else if (status === 'forbidden') {
+                adminAlert('error', '\uAD8C\uD55C \uC5C6\uC74C', '\uAD00\uB9AC\uC790 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.').then(function() {
+                    location.href = ctp + '/';
+                });
+            }
+            else if (status === 'login') {
+                adminAlert('info', '\uB85C\uADF8\uC778 \uD544\uC694', '\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.').then(function() {
+                    location.href = ctp + '/user/login';
+                });
+            }
+            else {
+                adminAlert('error', '\uBCC0\uACBD \uC2E4\uD328', '\uAD8C\uD55C \uBCC0\uACBD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
+            }
+        }).fail(function() {
+            adminAlert('error', '\uC694\uCCAD \uC2E4\uD328', '\uAD8C\uD55C \uBCC0\uACBD \uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.');
+        });
     });
 }
 
 function deleteUser(userNo) {
-    if (!confirm('해당 회원을 강제 탈퇴시키겠습니까?\n관련 데이터가 삭제될 수 있습니다.')) return;
-    $.post(ctp + '/admin/user/delete', { userNo: userNo }, function(res) {
-        if (res === 'ok') { $('#row-' + userNo).remove(); alert('탈퇴처리 완료'); }
-        else alert('실패했습니다.');
+    adminDangerConfirm({
+        title: '\uD68C\uC6D0 \uAC15\uC81C \uD0C8\uD1F4',
+        text: '\uD574\uB2F9 \uD68C\uC6D0\uC744 \uAC15\uC81C \uD0C8\uD1F4\uC2DC\uD0A4\uACA0\uC2B5\uB2C8\uAE4C? \uAD00\uB828 \uB370\uC774\uD130\uAC00 \uD568\uAED8 \uC0AD\uC81C\uB420 \uC218 \uC788\uC2B5\uB2C8\uB2E4.',
+        confirmButtonText: '\uD0C8\uD1F4 \uCC98\uB9AC'
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+
+        $.post(ctp + '/admin/user/delete', { userNo: userNo }, function(res) {
+            if (res === 'ok') {
+                $('#row-' + userNo).remove();
+                adminToast('success', '\uD0C8\uD1F4 \uCC98\uB9AC\uAC00 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.');
+            }
+            else {
+                adminAlert('error', '\uCC98\uB9AC \uC2E4\uD328', '\uD68C\uC6D0 \uD0C8\uD1F4 \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
+            }
+        }).fail(function() {
+            adminAlert('error', '\uC694\uCCAD \uC2E4\uD328', '\uD68C\uC6D0 \uD0C8\uD1F4 \uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.');
+        });
     });
 }
 </script>

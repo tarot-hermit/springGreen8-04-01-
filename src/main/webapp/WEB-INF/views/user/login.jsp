@@ -43,6 +43,10 @@
     .login-btn{ height:54px; border:none; border-radius:14px; background:var(--point);
                 color:#fff; font-size:16px; font-weight:800; transition:all 0.2s ease; }
     .login-btn:hover{ background:var(--point-dark); color:#fff; transform:translateY(-1px); }
+    .kakao-btn{ height:54px; border:1px solid #f7e600; border-radius:14px; background:#fee500;
+                color:#191919; font-size:16px; font-weight:800; transition:all 0.2s ease;
+                display:flex; align-items:center; justify-content:center; margin-top:10px; }
+    .kakao-btn:hover{ background:#f7dc00; color:#191919; transform:translateY(-1px); }
     .link-area{ margin-top:22px; text-align:center; line-height:1.9; }
     .link-area a{ color:#6b7280; font-size:14px; font-weight:600; transition:color 0.2s ease; }
     .link-area a:hover{ color:var(--point); }
@@ -81,6 +85,7 @@
                    name="userPw" id="userPw" placeholder="비밀번호 입력" required>
           </div>
           <button type="submit" class="btn login-btn w-100">로그인</button>
+          <a href="${ctp}/user/kakao/login" class="kakao-btn w-100">카카오 로그인</a>
           <div class="link-area">
             <a href="${ctp}/user/join">계정이 없으신가요? 회원가입</a><br/>
             <a href="${ctp}/user/findId">아이디 찾기</a>

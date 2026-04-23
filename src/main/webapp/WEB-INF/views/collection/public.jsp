@@ -1,11 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>공개 컬렉션</title>
+  <title>怨듦컻 而щ젆??/title>
   <%@ include file="/WEB-INF/views/common/bs5.jsp" %>
   <style>
     body { background:#0f0f0f; color:#e0e0e0; }
@@ -28,25 +29,30 @@
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
 <div class="page-wrap">
   <div class="d-flex justify-content-between align-items-center mb-0">
-    <div class="page-title">공개 컬렉션</div>
+    <div class="page-title">怨듦컻 而щ젆??/div>
     <c:if test="${not empty sessionScope.loginUser}">
-      <a href="${ctp}/collection/list" class="btn btn-outline-secondary btn-sm">내 컬렉션</a>
+      <a href="${ctp}/collection/list" class="btn btn-outline-secondary btn-sm">??而щ젆??/a>
     </c:if>
   </div>
 
   <div class="grid">
     <c:forEach var="c" items="${collections}">
     <div class="col-card" onclick="location.href='${ctp}/collection/detail/${c.collectionId}'">
-      <div class="col-title">${c.title}</div>
-      <div class="col-owner">by ${c.mid}</div>
-      <div class="col-desc">${empty c.description ? '설명 없음' : c.description}</div>
-      <div class="col-meta">🎬 ${c.movieCount}편</div>
+      <div class="col-title">${fn:escapeXml(c.title)}</div>
+      <div class="col-owner">by ${fn:escapeXml(c.mid)}</div>
+      <div class="col-desc">
+        <c:choose>
+          <c:when test="${empty c.description}">?ㅻ챸 ?놁쓬</c:when>
+          <c:otherwise>${fn:escapeXml(c.description)}</c:otherwise>
+        </c:choose>
+      </div>
+      <div class="col-meta">?렗 ${c.movieCount}??</div>
     </div>
     </c:forEach>
   </div>
 
   <c:if test="${empty collections}">
-    <div class="empty">공개된 컬렉션이 없습니다.</div>
+    <div class="empty">怨듦컻??而щ젆?섏씠 ?놁뒿?덈떎.</div>
   </c:if>
 </div>
 </body>

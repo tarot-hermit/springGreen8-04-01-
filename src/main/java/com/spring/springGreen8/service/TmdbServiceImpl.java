@@ -1,4 +1,4 @@
-﻿package com.spring.springGreen8.service;
+package com.spring.springGreen8.service;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +44,7 @@ public class TmdbServiceImpl implements TmdbService {
     private static final String YOUTUBE_VIDEO_CACHE_SOURCE = "YOUTUBE_V3";
     private static final int TMDB_PAGE_SIZE = 20;
     private static final int COMBINED_PAGE_SIZE = 24;
+    private static final int DETAIL_VIDEO_LIMIT = 4;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -57,6 +58,7 @@ public class TmdbServiceImpl implements TmdbService {
     @Value("${youtube.api.key:}")
     private String youtubeApiKey;
 
+    // YouTube quota 초과 시 같은 서버 프로세스 안에서 다음 리셋 시각까지 fallback 호출을 멈춘다.
     private volatile long youtubeQuotaBlockedUntilEpochMs = 0L;
 
     private String resolveApiKey() {
@@ -116,10 +118,13 @@ public class TmdbServiceImpl implements TmdbService {
         List<MovieVO> list = new ArrayList<>();
         if (response == null) return list;
 
-        List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
-        if (results == null) return list;
+        // TMDB 응답 형식이 비정상이면 ClassCastException 대신 빈 목록을 돌려준다.
+        Object resultsObj = response.get("results");
+        if (!(resultsObj instanceof List<?>)) return list;
+        List<Map<String, Object>> results = (List<Map<String, Object>>) resultsObj;
 
         for (Map<String, Object> item : results) {
+            if (item == null) continue;
             MovieVO vo = new MovieVO();
             vo.setTmdbId(item.get("id") != null ? ((Number) item.get("id")).intValue() : 0);
             vo.setTitle(item.get("title") != null ? (String) item.get("title") : "");
@@ -214,6 +219,33 @@ public class TmdbServiceImpl implements TmdbService {
                 + "&include_adult=false";
     }
 
+    private String buildKeywordSearchUrl(String query) {
+        return BASE_URL + "/search/keyword?api_key=" + resolveApiKey()
+                + "&query=" + encoded(query)
+                + "&page=1";
+    }
+
+    private String buildKeywordDiscoverUrl(String mediaType, int keywordId, int page, String countryCode) {
+        StringBuilder url = new StringBuilder(BASE_URL)
+                .append("/discover/")
+                .append(mediaType)
+                .append("?api_key=").append(resolveApiKey())
+                .append("&language=").append(LANG)
+                .append("&with_keywords=").append(keywordId)
+                .append("&page=").append(page)
+                .append("&sort_by=popularity.desc")
+                .append("&include_adult=false");
+
+        if (!isAllCountry(countryCode)) {
+            String country = normalizedCountry(countryCode);
+            if ("movie".equals(mediaType)) {
+                url.append("&region=").append(country);
+            }
+            url.append("&with_origin_country=").append(country);
+        }
+        return url.toString();
+    }
+
     private String buildOnTheAirTvUrl(int page) {
         return BASE_URL + "/tv/on_the_air?api_key=" + resolveApiKey()
                 + "&language=" + LANG
@@ -222,6 +254,94 @@ public class TmdbServiceImpl implements TmdbService {
 
     private boolean hasYoutubeApiKey() {
         return !resolveYoutubeApiKey().isEmpty() && !isYoutubeQuotaBlocked();
+    }
+
+    private String normalizeSearchQuery(String query) {
+        return query == null ? "" : query.replaceAll("\\s+", " ").trim();
+    }
+
+    private String normalizeComparableSearchText(String value) {
+        return value == null ? "" : value.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", "");
+    }
+
+    private List<String> extractSearchTokens(String query) {
+        List<String> tokens = new ArrayList<>();
+        String cleaned = normalizeSearchQuery(query).replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
+        if (cleaned.isEmpty()) return tokens;
+
+        for (String token : cleaned.split("\\s+")) {
+            String normalizedToken = normalizeComparableSearchText(token);
+            if (!normalizedToken.isEmpty() && !tokens.contains(normalizedToken)) {
+                tokens.add(normalizedToken);
+            }
+        }
+        return tokens;
+    }
+
+    private String extractTitleSearchQuery(String query) {
+        String normalized = normalizeSearchQuery(query);
+        int hashIndex = normalized.indexOf('#');
+        if (hashIndex < 0) return normalized;
+        return normalizeSearchQuery(normalized.substring(0, hashIndex));
+    }
+
+    private String extractKeywordSearchQuery(String query) {
+        String normalized = normalizeSearchQuery(query);
+        int hashIndex = normalized.indexOf('#');
+        if (hashIndex >= 0) {
+            String afterHash = normalizeSearchQuery(normalized.substring(hashIndex + 1));
+            if (!afterHash.isEmpty()) return afterHash;
+        }
+        return normalized.replaceFirst("^#+", "").trim();
+    }
+
+    private List<String> buildTitleFallbackQueries(String titleQuery) {
+        List<String> queries = new ArrayList<>();
+        String normalized = normalizeSearchQuery(titleQuery);
+        if (normalized.isEmpty()) return queries;
+
+        String cleaned = normalizeSearchQuery(normalized.replaceAll("[^\\p{L}\\p{N}]+", " "));
+        List<String> rawTokens = new ArrayList<>();
+        if (!cleaned.isEmpty()) {
+            for (String token : cleaned.split("\\s+")) {
+                if (!token.isBlank() && !rawTokens.contains(token)) {
+                    rawTokens.add(token);
+                }
+            }
+        }
+
+        if (rawTokens.size() >= 2) {
+            String withoutLastToken = String.join(" ", rawTokens.subList(0, rawTokens.size() - 1));
+            if (!withoutLastToken.isBlank() && !queries.contains(withoutLastToken)) {
+                queries.add(withoutLastToken);
+            }
+            String firstToken = rawTokens.get(0);
+            if (!queries.contains(firstToken)) {
+                queries.add(firstToken);
+            }
+            if (rawTokens.size() >= 3) {
+                String firstTwoTokens = rawTokens.get(0) + " " + rawTokens.get(1);
+                if (!queries.contains(firstTwoTokens)) {
+                    queries.add(firstTwoTokens);
+                }
+            }
+        }
+
+        String compact = normalizeComparableSearchText(normalized);
+        if (rawTokens.size() <= 1 && compact.length() >= 3) {
+            String prefix3 = compact.substring(0, 3);
+            if (!queries.contains(prefix3)) {
+                queries.add(prefix3);
+            }
+            if (compact.length() >= 4) {
+                String prefix4 = compact.substring(0, 4);
+                if (!queries.contains(prefix4)) {
+                    queries.add(prefix4);
+                }
+            }
+        }
+
+        return queries;
     }
 
     private String buildYoutubeSearchUrl(String query) {
@@ -248,10 +368,13 @@ public class TmdbServiceImpl implements TmdbService {
         Map<String, Object> response = getForMap(buildYoutubeSearchUrl(query));
         if (response == null) return videos;
 
-        List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
-        if (items == null) return videos;
+        // YouTube 응답이 기대한 형식이 아닐 경우 안전하게 빈 목록으로 복귀한다.
+        Object itemsObj = response.get("items");
+        if (!(itemsObj instanceof List<?>)) return videos;
+        List<Map<String, Object>> items = (List<Map<String, Object>>) itemsObj;
 
         for (Map<String, Object> item : items) {
+            if (item == null) continue;
             Object idObj = item.get("id");
             Object snippetObj = item.get("snippet");
             if (!(idObj instanceof Map<?, ?>) || !(snippetObj instanceof Map<?, ?>)) continue;
@@ -273,15 +396,24 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     private List<String> youtubeTitleCandidates(MediaContentVO content) {
+        if (content == null) return new ArrayList<>();
+        return youtubeTitleCandidates(content.getTitle(), content.getOriginalTitle());
+    }
+
+    private List<String> youtubeTitleCandidates(MovieVO movie) {
+        if (movie == null) return new ArrayList<>();
+        return youtubeTitleCandidates(movie.getTitle(), movie.getOriginalTitle());
+    }
+
+    private List<String> youtubeTitleCandidates(String title, String originalTitle) {
         List<String> titles = new ArrayList<>();
-        if (content == null) return titles;
-        if (content.getTitle() != null && !content.getTitle().isBlank()) {
-            titles.add(content.getTitle().trim());
+        if (title != null && !title.isBlank()) {
+            titles.add(title.trim());
         }
-        if (content.getOriginalTitle() != null && !content.getOriginalTitle().isBlank()) {
-            String originalTitle = content.getOriginalTitle().trim();
-            if (!titles.contains(originalTitle)) {
-                titles.add(originalTitle);
+        if (originalTitle != null && !originalTitle.isBlank()) {
+            String normalizedOriginalTitle = originalTitle.trim();
+            if (!titles.contains(normalizedOriginalTitle)) {
+                titles.add(normalizedOriginalTitle);
             }
         }
         return titles;
@@ -289,6 +421,36 @@ public class TmdbServiceImpl implements TmdbService {
 
     private String normalizedYoutubeText(String value) {
         return value == null ? "" : value.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", "");
+    }
+
+    private int levenshteinDistance(String left, String right) {
+        if (left == null) left = "";
+        if (right == null) right = "";
+        if (left.equals(right)) return 0;
+        if (left.isEmpty()) return right.length();
+        if (right.isEmpty()) return left.length();
+
+        int[] previous = new int[right.length() + 1];
+        int[] current = new int[right.length() + 1];
+
+        for (int j = 0; j <= right.length(); j++) {
+            previous[j] = j;
+        }
+
+        for (int i = 1; i <= left.length(); i++) {
+            current[0] = i;
+            for (int j = 1; j <= right.length(); j++) {
+                int cost = left.charAt(i - 1) == right.charAt(j - 1) ? 0 : 1;
+                current[j] = Math.min(
+                        Math.min(current[j - 1] + 1, previous[j] + 1),
+                        previous[j - 1] + cost
+                );
+            }
+            int[] swap = previous;
+            previous = current;
+            current = swap;
+        }
+        return previous[right.length()];
     }
 
     private boolean containsAnyIgnoreCase(String source, String... keywords) {
@@ -300,6 +462,47 @@ public class TmdbServiceImpl implements TmdbService {
             }
         }
         return false;
+    }
+
+    private int textMatchScore(String referenceQuery, String candidateText) {
+        String normalizedReference = normalizeComparableSearchText(referenceQuery);
+        String normalizedCandidate = normalizeComparableSearchText(candidateText);
+        if (normalizedReference.isEmpty() || normalizedCandidate.isEmpty()) return 0;
+
+        List<String> tokens = extractSearchTokens(referenceQuery);
+        int score = 0;
+
+        if (normalizedCandidate.equals(normalizedReference)) {
+            score += 120;
+        } else if (normalizedCandidate.contains(normalizedReference) || normalizedReference.contains(normalizedCandidate)) {
+            score += 70;
+        }
+
+        int tokenMatches = 0;
+        for (String token : tokens) {
+            if (!token.isEmpty() && normalizedCandidate.contains(token)) {
+                tokenMatches++;
+                score += 18;
+            }
+        }
+        if (tokenMatches > 1 && tokenMatches == tokens.size()) {
+            score += 24;
+        }
+
+        int distance = levenshteinDistance(normalizedReference, normalizedCandidate);
+        int maxLength = Math.max(normalizedReference.length(), normalizedCandidate.length());
+        if (normalizedReference.length() >= 4 && maxLength > 0) {
+            if (distance <= 2) {
+                score += 45 - (distance * 10);
+            } else {
+                double similarity = 1.0 - ((double) distance / maxLength);
+                if (similarity >= 0.8) {
+                    score += 20;
+                }
+            }
+        }
+
+        return score;
     }
 
     private boolean hasStrongYoutubeTitleMatch(String candidateText, List<String> titleCandidates) {
@@ -462,12 +665,30 @@ public class TmdbServiceImpl implements TmdbService {
         return filterPlayableYoutubeVideos(videos, false);
     }
 
-    private List<Map<String, Object>> filterPlayableYoutubeVideos(List<Map<String, Object>> videos, boolean allowUnverifiedWhenQuotaBlocked) {
+    private List<Map<String, Object>> limitDetailVideos(List<Map<String, Object>> videos) {
+        if (videos == null || videos.isEmpty()) return new ArrayList<>();
+        return videos.size() > DETAIL_VIDEO_LIMIT
+                ? new ArrayList<>(videos.subList(0, DETAIL_VIDEO_LIMIT))
+                : new ArrayList<>(videos);
+    }
+
+    /**
+     * TMDB가 제공한 YouTube 영상 목록을 YouTube Data API로 2차 검증한다.
+     *
+     * @param videos                  TMDB가 YouTube 사이트로 분류한 원본 영상 후보
+     * @param allowUnverifiedOnFailure YouTube 검증이 실패(할당량 소진·키 오류·삭제된 영상 등)했을 때
+     *                                 원본(distinct)을 그대로 돌려줄지 여부. 상세 페이지처럼
+     *                                 "TMDB가 공식 예고편이라고 말한 것은 최대한 보여주는" 화면에서는 true.
+     */
+    private List<Map<String, Object>> filterPlayableYoutubeVideos(List<Map<String, Object>> videos, boolean allowUnverifiedOnFailure) {
         if (videos == null || videos.isEmpty()) return new ArrayList<>();
 
         Set<String> playableKeys = fetchPlayableYoutubeVideoKeys(videos);
         if (playableKeys.isEmpty()) {
-            if (allowUnverifiedWhenQuotaBlocked && isYoutubeQuotaBlocked()) {
+            // 이전에는 quota blocked 일 때만 원본을 돌려줬지만, 키 오류·네트워크 실패 등으로도
+            // playableKeys가 비어 예고편이 전부 사라지는 문제가 있었다. 검증 실패 사유와 무관하게
+            // 원본을 그대로 반환해 JSP에서 예고편 섹션이 빈 화면이 되지 않도록 한다.
+            if (allowUnverifiedOnFailure) {
                 return distinctYoutubeVideos(videos);
             }
             return new ArrayList<>();
@@ -484,6 +705,7 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     private List<Map<String, Object>> rankYoutubeFallbackVideos(List<Map<String, Object>> videos, List<String> titleCandidates, Integer seasonNo) {
+        // 제목/시즌/예고편 키워드 점수로 YouTube 검색 결과를 정렬한다.
         List<Map<String, Object>> ranked = new ArrayList<>();
         for (Map<String, Object> video : videos) {
             int score = youtubeResultScore(video, titleCandidates, seasonNo);
@@ -513,6 +735,7 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     private List<Map<String, Object>> searchYoutubeFallbackCandidates(List<String> titleCandidates, Integer seasonNo, String... queries) {
+        // 여러 검색어에서 나온 중복 영상은 YouTube key 기준으로 한 번만 후보에 넣는다.
         List<Map<String, Object>> candidates = new ArrayList<>();
         Set<String> seenKeys = new LinkedHashSet<>();
         for (String query : queries) {
@@ -588,6 +811,20 @@ public class TmdbServiceImpl implements TmdbService {
         for (String title : titleCandidates) {
             if (title == null || title.isBlank()) continue;
             queries.add(title + " official trailer");
+            queries.add(title + " main trailer");
+            queries.add(title + " trailer");
+            queries.add(title + " teaser");
+            queries.add(title + " official teaser");
+        }
+        return queries;
+    }
+
+    private List<String> buildMovieYoutubeQueries(List<String> titleCandidates) {
+        List<String> queries = new ArrayList<>();
+        for (String title : titleCandidates) {
+            if (title == null || title.isBlank()) continue;
+            queries.add(title + " official trailer");
+            queries.add(title + " main trailer");
             queries.add(title + " trailer");
             queries.add(title + " teaser");
             queries.add(title + " official teaser");
@@ -654,6 +891,53 @@ public class TmdbServiceImpl implements TmdbService {
 
     private String stringValue(Object value) {
         return value == null ? "" : String.valueOf(value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Integer> searchKeywordIds(String keywordQuery) {
+        List<Integer> keywordIds = new ArrayList<>();
+        String normalized = normalizeSearchQuery(keywordQuery);
+        if (normalized.isEmpty()) return keywordIds;
+
+        Map<String, Object> response = getForMap(buildKeywordSearchUrl(normalized));
+        if (response == null) return keywordIds;
+
+        List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
+        if (results == null || results.isEmpty()) return keywordIds;
+
+        results.sort((a, b) -> {
+            String aName = stringValue(a.get("name"));
+            String bName = stringValue(b.get("name"));
+            boolean aExact = normalized.equalsIgnoreCase(aName);
+            boolean bExact = normalized.equalsIgnoreCase(bName);
+            if (aExact != bExact) return aExact ? -1 : 1;
+            return Integer.compare(intValue(a.get("id")), intValue(b.get("id")));
+        });
+
+        for (Map<String, Object> item : results) {
+            int keywordId = intValue(item.get("id"));
+            if (keywordId <= 0 || keywordIds.contains(keywordId)) continue;
+            keywordIds.add(keywordId);
+            if (keywordIds.size() == 3) break;
+        }
+        return keywordIds;
+    }
+
+    private int mediaSearchScore(MediaContentVO content, String referenceQuery) {
+        if (content == null) return 0;
+        return Math.max(
+                textMatchScore(referenceQuery, content.getTitle()),
+                textMatchScore(referenceQuery, content.getOriginalTitle())
+        );
+    }
+
+    private int maxMediaSearchScore(List<MediaContentVO> contents, String referenceQuery) {
+        int maxScore = 0;
+        if (contents == null) return maxScore;
+        for (MediaContentVO content : contents) {
+            maxScore = Math.max(maxScore, mediaSearchScore(content, referenceQuery));
+        }
+        return maxScore;
     }
 
     private int intValue(Object value) {
@@ -1085,13 +1369,8 @@ public class TmdbServiceImpl implements TmdbService {
         return parseMovieList(getForMap(url));
     }
 
-    @Override
     @SuppressWarnings("unchecked")
-    public MediaSearchResultVO searchContents(String query, int page, String mediaType, String countryCode) {
-        if ("tv".equalsIgnoreCase(mediaType)) {
-            return searchTvContents(query, page, countryCode);
-        }
-
+    private MediaSearchResultVO searchContentsByQuery(String query, int page, String mediaType, String countryCode) {
         MediaSearchResultVO result = new MediaSearchResultVO();
         int safePage = Math.max(page, 1);
         result.setPage(safePage);
@@ -1147,7 +1426,7 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @SuppressWarnings("unchecked")
-    private MediaSearchResultVO searchTvContents(String query, int page, String countryCode) {
+    private MediaSearchResultVO searchTvContentsByQuery(String query, int page, String countryCode) {
         MediaSearchResultVO result = new MediaSearchResultVO();
         int safePage = Math.max(page, 1);
         result.setPage(safePage);
@@ -1198,6 +1477,189 @@ public class TmdbServiceImpl implements TmdbService {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
+    private MediaSearchResultVO searchTitleFallbackContents(String titleQuery, int page, String mediaType, String countryCode) {
+        MediaSearchResultVO result = new MediaSearchResultVO();
+        int safePage = Math.max(page, 1);
+        result.setPage(safePage);
+
+        List<String> fallbackQueries = buildTitleFallbackQueries(titleQuery);
+        if (fallbackQueries.isEmpty()) return result;
+
+        int targetCandidates = safePage * TMDB_PAGE_SIZE + 10;
+        int maxRawPages = Math.max(2, safePage);
+        List<MediaContentVO> candidates = new ArrayList<>();
+        Set<String> seenKeys = new LinkedHashSet<>();
+
+        for (String fallbackQuery : fallbackQueries) {
+            if (fallbackQuery == null || fallbackQuery.isBlank()) continue;
+
+            for (int rawPage = 1; rawPage <= maxRawPages && candidates.size() < targetCandidates; rawPage++) {
+                Map<String, Object> response = getForMap(
+                        "tv".equalsIgnoreCase(mediaType)
+                                ? buildTvSearchUrl(fallbackQuery, rawPage)
+                                : buildMultiSearchUrl(fallbackQuery, rawPage)
+                );
+                if (response == null) break;
+
+                List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("results");
+                if (items == null || items.isEmpty()) continue;
+
+                for (Map<String, Object> item : items) {
+                    String itemType = "tv".equalsIgnoreCase(mediaType) ? "tv" : stringValue(item.get("media_type"));
+                    if (!"movie".equals(itemType) && !"tv".equals(itemType)) continue;
+
+                    MediaContentVO content = parseMediaContent(item, itemType);
+                    if (!matchesRequestedMediaType(content, mediaType)) continue;
+                    if (!matchesCountry(content, countryCode)) continue;
+
+                    int score = mediaSearchScore(content, titleQuery);
+                    if (score < 30) continue;
+
+                    String key = content.getMediaType() + ":" + content.getTmdbId();
+                    if (!seenKeys.add(key)) continue;
+                    candidates.add(content);
+                }
+            }
+        }
+
+        candidates.sort((a, b) -> {
+            int scoreCompare = Integer.compare(mediaSearchScore(b, titleQuery), mediaSearchScore(a, titleQuery));
+            if (scoreCompare != 0) return scoreCompare;
+            return Double.compare(b.getPopularity(), a.getPopularity());
+        });
+
+        result.setTotalResults(candidates.size());
+        int fromIndex = (safePage - 1) * TMDB_PAGE_SIZE;
+        if (fromIndex >= candidates.size()) {
+            result.setContents(new ArrayList<>());
+            result.setTotalPages(Math.max(1, safePage - 1));
+            result.setHasNextPage(false);
+            return result;
+        }
+
+        int toIndex = Math.min(fromIndex + TMDB_PAGE_SIZE, candidates.size());
+        result.setContents(new ArrayList<>(candidates.subList(fromIndex, toIndex)));
+        result.setHasNextPage(candidates.size() > toIndex);
+        result.setTotalPages(result.isHasNextPage() ? safePage + 1 : safePage);
+        return result;
+    }
+
+    private MediaSearchResultVO searchKeywordFallbackContents(String keywordQuery, int page, String mediaType, String countryCode) {
+        MediaSearchResultVO empty = new MediaSearchResultVO();
+        int safePage = Math.max(page, 1);
+        empty.setPage(safePage);
+
+        String normalizedKeyword = normalizeSearchQuery(keywordQuery);
+        if (normalizedKeyword.isEmpty()) return empty;
+
+        List<Integer> keywordIds = searchKeywordIds(normalizedKeyword);
+        if (keywordIds.isEmpty()) return empty;
+
+        int keywordId = keywordIds.get(0);
+
+        if ("movie".equalsIgnoreCase(mediaType) || "tv".equalsIgnoreCase(mediaType)) {
+            String forcedMediaType = "tv".equalsIgnoreCase(mediaType) ? "tv" : "movie";
+            Map<String, Object> response = getForMap(buildKeywordDiscoverUrl(forcedMediaType, keywordId, safePage, countryCode));
+            List<MediaContentVO> contents = parseMediaList(response, forcedMediaType);
+
+            MediaSearchResultVO result = new MediaSearchResultVO();
+            result.setPage(safePage);
+            result.setContents(contents);
+            result.setTotalResults(intValue(response == null ? null : response.get("total_results")));
+            int totalPages = intValue(response == null ? null : response.get("total_pages"));
+            result.setTotalPages(totalPages > 0 ? totalPages : (contents.isEmpty() ? 0 : 1));
+            result.setHasNextPage(totalPages > safePage);
+            return result;
+        }
+
+        int requiredItems = safePage * TMDB_PAGE_SIZE + 1;
+        int sourcePagesToFetch = pagesNeededFor(requiredItems);
+        List<MediaContentVO> merged = new ArrayList<>();
+        int movieTotalPages = 0;
+        int tvTotalPages = 0;
+
+        for (int sourcePage = 1; sourcePage <= sourcePagesToFetch; sourcePage++) {
+            if (sourcePage == 1 || sourcePage <= movieTotalPages) {
+                Map<String, Object> movieResponse = getForMap(buildKeywordDiscoverUrl("movie", keywordId, sourcePage, countryCode));
+                if (movieResponse != null) {
+                    movieTotalPages = Math.max(movieTotalPages, intValue(movieResponse.get("total_pages")));
+                    for (MediaContentVO content : parseMediaList(movieResponse, "movie")) {
+                        if (matchesRequestedMediaType(content, mediaType) && matchesCountry(content, countryCode)) {
+                            merged.add(content);
+                        }
+                    }
+                }
+            }
+
+            if (sourcePage == 1 || sourcePage <= tvTotalPages) {
+                Map<String, Object> tvResponse = getForMap(buildKeywordDiscoverUrl("tv", keywordId, sourcePage, countryCode));
+                if (tvResponse != null) {
+                    tvTotalPages = Math.max(tvTotalPages, intValue(tvResponse.get("total_pages")));
+                    for (MediaContentVO content : parseMediaList(tvResponse, "tv")) {
+                        if (matchesRequestedMediaType(content, mediaType) && matchesCountry(content, countryCode)) {
+                            merged.add(content);
+                        }
+                    }
+                }
+            }
+        }
+
+        merged.sort((a, b) -> Double.compare(b.getPopularity(), a.getPopularity()));
+
+        MediaSearchResultVO result = new MediaSearchResultVO();
+        result.setPage(safePage);
+        result.setTotalResults(merged.size());
+
+        int fromIndex = (safePage - 1) * TMDB_PAGE_SIZE;
+        if (fromIndex >= merged.size()) {
+            result.setContents(new ArrayList<>());
+            result.setTotalPages(Math.max(1, safePage - 1));
+            result.setHasNextPage(false);
+            return result;
+        }
+
+        int toIndex = Math.min(fromIndex + TMDB_PAGE_SIZE, merged.size());
+        result.setContents(new ArrayList<>(merged.subList(fromIndex, toIndex)));
+        boolean moreItemsAlreadyFetched = merged.size() > toIndex;
+        boolean moreSourcePagesRemain = sourcePagesToFetch < movieTotalPages || sourcePagesToFetch < tvTotalPages;
+        result.setHasNextPage(moreItemsAlreadyFetched || moreSourcePagesRemain);
+        result.setTotalPages(result.isHasNextPage() ? safePage + 1 : safePage);
+        return result;
+    }
+
+    @Override
+    public MediaSearchResultVO searchContents(String query, int page, String mediaType, String countryCode) {
+        String titleQuery = extractTitleSearchQuery(query);
+        String keywordQuery = extractKeywordSearchQuery(query);
+
+        MediaSearchResultVO titleResult;
+        if ("tv".equalsIgnoreCase(mediaType)) {
+            titleResult = searchTvContentsByQuery(titleQuery, page, countryCode);
+        } else {
+            titleResult = searchContentsByQuery(titleQuery, page, mediaType, countryCode);
+        }
+
+        MediaSearchResultVO titleFallbackResult = searchTitleFallbackContents(titleQuery, page, mediaType, countryCode);
+        int titleScore = maxMediaSearchScore(titleResult.getContents(), titleQuery);
+        int titleFallbackScore = maxMediaSearchScore(titleFallbackResult.getContents(), titleQuery);
+
+        if (titleScore >= 30 && titleScore >= titleFallbackScore) {
+            return titleResult;
+        }
+
+        if (titleFallbackScore >= 30) {
+            return titleFallbackResult;
+        }
+
+        if (titleResult.getTotalResults() > 0) {
+            return titleResult;
+        }
+
+        MediaSearchResultVO keywordResult = searchKeywordFallbackContents(keywordQuery, page, mediaType, countryCode);
+        return keywordResult.getTotalResults() > 0 ? keywordResult : titleResult;
+    }
+
     @Override
     public MovieVO getMovieDetail(int tmdbId) {
         String url = BASE_URL + "/movie/" + tmdbId + "?api_key=" + resolveApiKey() + "&language=" + LANG;
@@ -1215,6 +1677,9 @@ public class TmdbServiceImpl implements TmdbService {
         vo.setRuntime(item.get("runtime") != null ? ((Number) item.get("runtime")).intValue() : 0);
         vo.setVoteAverage(item.get("vote_average") != null ? ((Number) item.get("vote_average")).doubleValue() : 0);
         vo.setPopularity(item.get("popularity") != null ? ((Number) item.get("popularity")).doubleValue() : 0);
+        List<Integer> genreIds = parseGenreIds(item.get("genres"));
+        List<String> genreNames = parseGenreNames(item.get("genres"));
+        vo.setAnimation(genreIds.contains(16) || genreNames.contains("Animation"));
         return vo;
     }
 
@@ -1316,14 +1781,40 @@ public class TmdbServiceImpl implements TmdbService {
     @Override
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getVideoList(int tmdbId) {
+        // 영화 영상은 TMDB ko-KR -> TMDB en-US -> YouTube 검색 fallback 순서로 찾는다.
+        // DB 캐시가 있으면 항상 먼저 사용해서 TMDB/YouTube API 호출을 건너뛴다.
+        List<Map<String, Object>> cached = getCachedVideoList("movie", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE);
+        if (!cached.isEmpty()) return limitDetailVideos(cached);
+
         String url = BASE_URL + "/movie/" + tmdbId + "/videos?api_key=" + resolveApiKey() + "&language=" + LANG;
         List<Map<String, Object>> list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
-
-        if (list.isEmpty()) {
-            url = BASE_URL + "/movie/" + tmdbId + "/videos?api_key=" + resolveApiKey() + "&language=en-US";
-            list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
+        if (!list.isEmpty()) {
+            // 검증 실패로 unverified 원본이 넘어왔어도 캐싱한다 — 다음 조회부터는 DB 캐시가 우선.
+            saveVideoCache("movie", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE, list);
+            return limitDetailVideos(list);
         }
-        return list;
+
+        url = BASE_URL + "/movie/" + tmdbId + "/videos?api_key=" + resolveApiKey() + "&language=en-US";
+        list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
+        if (!list.isEmpty()) {
+            saveVideoCache("movie", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE, list);
+            return limitDetailVideos(list);
+        }
+
+        MovieVO movie = getMovieDetail(tmdbId);
+        List<String> titleCandidates = youtubeTitleCandidates(movie);
+        if (titleCandidates.isEmpty()) return limitDetailVideos(list);
+        if (isYoutubeQuotaBlocked()) return new ArrayList<>();
+
+        cached = rankYoutubeFallbackVideos(getCachedVideoList("movie", tmdbId, null, YOUTUBE_VIDEO_CACHE_SOURCE), titleCandidates, null);
+        if (!cached.isEmpty()) return limitDetailVideos(cached);
+
+        List<String> queries = buildMovieYoutubeQueries(titleCandidates);
+        list = searchYoutubeFallbackCandidates(titleCandidates, null, queries.toArray(new String[0]));
+        if (!list.isEmpty()) {
+            saveVideoCache("movie", tmdbId, null, YOUTUBE_VIDEO_CACHE_SOURCE, list);
+        }
+        return limitDetailVideos(list);
     }
 
     @Override
@@ -1345,73 +1836,69 @@ public class TmdbServiceImpl implements TmdbService {
 
     @Override
     public List<Map<String, Object>> getTvVideoList(int tmdbId) {
+        // 시리즈 영상도 영화와 같은 순서로 찾되, 검색어는 TV 시리즈 문맥에 맞춰 만든다.
+        // DB 캐시가 있으면 항상 먼저 사용한다.
         List<Map<String, Object>> cached = getCachedVideoList("tv", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE);
-        if (!cached.isEmpty()) return cached;
+        if (!cached.isEmpty()) return limitDetailVideos(cached);
 
         String url = BASE_URL + "/tv/" + tmdbId + "/videos?api_key=" + resolveApiKey() + "&language=" + LANG;
         List<Map<String, Object>> list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
         if (!list.isEmpty()) {
-            if (!isYoutubeQuotaBlocked()) {
-                saveVideoCache("tv", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE, list);
-            }
-            return list;
+            saveVideoCache("tv", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE, list);
+            return limitDetailVideos(list);
         }
 
         url = BASE_URL + "/tv/" + tmdbId + "/videos?api_key=" + resolveApiKey() + "&language=en-US";
         list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
         if (!list.isEmpty()) {
-            if (!isYoutubeQuotaBlocked()) {
-                saveVideoCache("tv", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE, list);
-            }
-            return list;
+            saveVideoCache("tv", tmdbId, null, TMDB_VIDEO_CACHE_SOURCE, list);
+            return limitDetailVideos(list);
         }
 
         MediaContentVO tv = getTvDetail(tmdbId);
         List<String> titleCandidates = youtubeTitleCandidates(tv);
-        if (titleCandidates.isEmpty()) return list;
+        if (titleCandidates.isEmpty()) return limitDetailVideos(list);
         if (isYoutubeQuotaBlocked()) return new ArrayList<>();
 
         cached = rankYoutubeFallbackVideos(getCachedVideoList("tv", tmdbId, null, YOUTUBE_VIDEO_CACHE_SOURCE), titleCandidates, null);
-        if (!cached.isEmpty()) return cached;
+        if (!cached.isEmpty()) return limitDetailVideos(cached);
 
         List<String> queries = buildSeriesYoutubeQueries(titleCandidates);
         list = searchYoutubeFallbackCandidates(titleCandidates, null, queries.toArray(new String[0]));
         if (!list.isEmpty()) {
             saveVideoCache("tv", tmdbId, null, YOUTUBE_VIDEO_CACHE_SOURCE, list);
         }
-        return list;
+        return limitDetailVideos(list);
     }
 
     @Override
     public List<Map<String, Object>> getTvSeasonVideoList(int tmdbId, int seasonNo) {
+        // 시즌 상세 영상은 시즌 번호까지 캐시 키에 포함해서 다른 시즌과 섞이지 않게 한다.
+        // DB 캐시가 있으면 항상 먼저 사용한다.
         List<Map<String, Object>> cached = getCachedVideoList("tv", tmdbId, seasonNo, TMDB_VIDEO_CACHE_SOURCE);
-        if (!cached.isEmpty()) return cached;
+        if (!cached.isEmpty()) return limitDetailVideos(cached);
 
         String url = BASE_URL + "/tv/" + tmdbId + "/season/" + seasonNo + "/videos?api_key=" + resolveApiKey() + "&language=" + LANG;
         List<Map<String, Object>> list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
         if (!list.isEmpty()) {
-            if (!isYoutubeQuotaBlocked()) {
-                saveVideoCache("tv", tmdbId, seasonNo, TMDB_VIDEO_CACHE_SOURCE, list);
-            }
-            return list;
+            saveVideoCache("tv", tmdbId, seasonNo, TMDB_VIDEO_CACHE_SOURCE, list);
+            return limitDetailVideos(list);
         }
 
         url = BASE_URL + "/tv/" + tmdbId + "/season/" + seasonNo + "/videos?api_key=" + resolveApiKey() + "&language=en-US";
         list = filterPlayableYoutubeVideos(filterYoutube(getForMap(url)), true);
         if (!list.isEmpty()) {
-            if (!isYoutubeQuotaBlocked()) {
-                saveVideoCache("tv", tmdbId, seasonNo, TMDB_VIDEO_CACHE_SOURCE, list);
-            }
-            return list;
+            saveVideoCache("tv", tmdbId, seasonNo, TMDB_VIDEO_CACHE_SOURCE, list);
+            return limitDetailVideos(list);
         }
 
         MediaContentVO tv = getTvDetail(tmdbId);
         List<String> titleCandidates = youtubeTitleCandidates(tv);
-        if (titleCandidates.isEmpty()) return list;
+        if (titleCandidates.isEmpty()) return limitDetailVideos(list);
         if (isYoutubeQuotaBlocked()) return new ArrayList<>();
 
         cached = rankYoutubeFallbackVideos(getCachedVideoList("tv", tmdbId, seasonNo, YOUTUBE_VIDEO_CACHE_SOURCE), titleCandidates, seasonNo);
-        if (!cached.isEmpty()) return cached;
+        if (!cached.isEmpty()) return limitDetailVideos(cached);
 
         SeasonVO season = getTvSeasonDetail(tmdbId, seasonNo);
         List<String> queries = buildSeasonYoutubeQueries(titleCandidates, seasonNo, season);
@@ -1419,7 +1906,7 @@ public class TmdbServiceImpl implements TmdbService {
         if (!list.isEmpty()) {
             saveVideoCache("tv", tmdbId, seasonNo, YOUTUBE_VIDEO_CACHE_SOURCE, list);
         }
-        return list;
+        return limitDetailVideos(list);
     }
 
     @SuppressWarnings("unchecked")
@@ -1467,14 +1954,18 @@ public class TmdbServiceImpl implements TmdbService {
     @Override
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getPersonMovies(int personId) {
-        String url = BASE_URL + "/person/" + personId + "/movie_credits?api_key=" + resolveApiKey() + "&language=" + LANG;
+        String url = BASE_URL + "/person/" + personId + "/combined_credits?api_key=" + resolveApiKey() + "&language=" + LANG;
         Map<String, Object> res = getForMap(url);
         if (res == null) return new ArrayList<>();
         List<Map<String, Object>> cast = (List<Map<String, Object>>) res.get("cast");
         if (cast == null) return new ArrayList<>();
+        cast.removeIf(item -> {
+            String mediaType = stringValue(item.get("media_type"));
+            return !"movie".equals(mediaType) && !"tv".equals(mediaType);
+        });
         cast.sort((a, b) -> {
-            String da = (String) a.getOrDefault("release_date", "");
-            String db = (String) b.getOrDefault("release_date", "");
+            String da = stringValue(a.getOrDefault("release_date", a.get("first_air_date")));
+            String db = stringValue(b.getOrDefault("release_date", b.get("first_air_date")));
             return db.compareTo(da);
         });
         return cast;
@@ -1499,6 +1990,20 @@ public class TmdbServiceImpl implements TmdbService {
         Map<String, Object> res = getForMap(url);
         if (res == null) return new ArrayList<>();
         List<Map<String, Object>> keywords = (List<Map<String, Object>>) res.get("keywords");
+        return keywords != null ? keywords : new ArrayList<>();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getTvKeywords(int tmdbId) {
+        String url = BASE_URL + "/tv/" + tmdbId + "/keywords?api_key=" + resolveApiKey();
+        Map<String, Object> res = getForMap(url);
+        if (res == null) return new ArrayList<>();
+
+        List<Map<String, Object>> keywords = (List<Map<String, Object>>) res.get("results");
+        if (keywords == null) {
+            keywords = (List<Map<String, Object>>) res.get("keywords");
+        }
         return keywords != null ? keywords : new ArrayList<>();
     }
 

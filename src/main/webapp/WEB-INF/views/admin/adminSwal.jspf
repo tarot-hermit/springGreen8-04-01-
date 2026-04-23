@@ -1,0 +1,130 @@
+﻿<%@ page pageEncoding="UTF-8"%>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+  .admin-swal-popup {
+    background:#0f172a;
+    color:#e2e8f0;
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:20px;
+    box-shadow:0 24px 60px rgba(2,6,23,0.48);
+  }
+  .admin-swal-title {
+    color:#f8fafc;
+    font-size:1.3rem;
+    font-weight:800;
+  }
+  .admin-swal-text {
+    color:#94a3b8;
+    line-height:1.7;
+    font-size:14px;
+  }
+  .admin-swal-confirm,
+  .admin-swal-cancel {
+    border:0;
+    border-radius:999px;
+    padding:11px 20px;
+    font-size:14px;
+    font-weight:700;
+    min-width:104px;
+    transition:transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+  }
+  .admin-swal-confirm:hover,
+  .admin-swal-cancel:hover {
+    transform:translateY(-1px);
+    opacity:0.96;
+  }
+  .admin-swal-confirm {
+    background:linear-gradient(135deg, #22c55e, #16a34a);
+    color:#f8fafc;
+  }
+  .admin-swal-confirm.is-danger {
+    background:linear-gradient(135deg, #ef4444, #dc2626);
+  }
+  .admin-swal-cancel {
+    background:#334155;
+    color:#e2e8f0;
+  }
+  .admin-swal-toast {
+    background:#111827;
+    color:#f8fafc;
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    box-shadow:0 18px 40px rgba(2,6,23,0.38);
+  }
+</style>
+<script>
+  function adminSwal(options) {
+    return Swal.fire(Object.assign({
+      customClass: {
+        popup: 'admin-swal-popup',
+        title: 'admin-swal-title',
+        htmlContainer: 'admin-swal-text',
+        confirmButton: 'admin-swal-confirm',
+        cancelButton: 'admin-swal-cancel'
+      },
+      buttonsStyling: false,
+      reverseButtons: true,
+      confirmButtonText: '\uD655\uC778'
+    }, options || {}));
+  }
+
+  function adminAlert(icon, title, text, extraOptions) {
+    return adminSwal(Object.assign({
+      icon: icon,
+      title: title,
+      text: text
+    }, extraOptions || {}));
+  }
+
+  function adminConfirm(options) {
+    return adminSwal(Object.assign({
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '\uD655\uC778',
+      cancelButtonText: '\uCDE8\uC18C'
+    }, options || {})).then(function(result) {
+      var popup = Swal.getPopup();
+      if (popup) {
+        var confirmButton = popup.querySelector('.admin-swal-confirm');
+        if (confirmButton) confirmButton.classList.remove('is-danger');
+      }
+      return result;
+    });
+  }
+
+  function adminDangerConfirm(options) {
+    return adminSwal(Object.assign({
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '\uC0AD\uC81C',
+      cancelButtonText: '\uCDE8\uC18C',
+      didOpen: function(popup) {
+        var confirmButton = popup.querySelector('.admin-swal-confirm');
+        if (confirmButton) confirmButton.classList.add('is-danger');
+      }
+    }, options || {})).then(function(result) {
+      var popup = Swal.getPopup();
+      if (popup) {
+        var confirmButton = popup.querySelector('.admin-swal-confirm');
+        if (confirmButton) confirmButton.classList.remove('is-danger');
+      }
+      return result;
+    });
+  }
+
+  function adminToast(icon, title) {
+    return Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: icon,
+      title: title,
+      timer: 1800,
+      showConfirmButton: false,
+      timerProgressBar: true,
+      customClass: {
+        popup: 'admin-swal-toast'
+      }
+    });
+  }
+</script>
+

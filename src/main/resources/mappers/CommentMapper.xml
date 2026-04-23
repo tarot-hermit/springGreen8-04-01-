@@ -4,42 +4,67 @@
 
 <mapper namespace="com.spring.springGreen8.dao.CommentDAO">
 
-    <!-- 댓글 등록 -->
     <insert id="insertComment" parameterType="CommentVO">
-        INSERT INTO comment (review_no, user_no, content)
-        VALUES (#{reviewNo}, #{userNo}, #{content})
+        INSERT INTO comment (review_no, parent_id, user_no, content)
+        VALUES (#{reviewNo}, #{parentId}, #{userNo}, #{content})
     </insert>
 
-    <!-- 리뷰별 댓글 목록 -->
     <select id="selectCommentsByReviewNo" parameterType="int"
             resultType="CommentVO">
         SELECT
             c.comment_no AS commentNo,
             c.review_no  AS reviewNo,
+            c.parent_id  AS parentId,
             c.user_no    AS userNo,
             c.content    AS content,
             c.reg_date   AS regDate,
-            u.user_name  AS userName,
-            u.user_img   AS userImg
+            COALESCE(u.user_name, '탈퇴한 사용자') AS userName,
+            COALESCE(u.user_img, 'default.png') AS userImg,
+            CASE
+                WHEN c.parent_id IS NOT NULL THEN COALESCE(pu.user_name, '탈퇴한 사용자')
+                ELSE NULL
+            END AS parentUserName
         FROM comment c
-        JOIN users u ON c.user_no = u.user_no
+        LEFT JOIN users u ON c.user_no = u.user_no
+        LEFT JOIN comment pc ON c.parent_id = pc.comment_no
+        LEFT JOIN users pu ON pc.user_no = pu.user_no
         WHERE c.review_no = #{reviewNo}
-        ORDER BY c.reg_date ASC
+        ORDER BY COALESCE(pc.reg_date, c.reg_date) ASC,
+                 COALESCE(c.parent_id, c.comment_no) ASC,
+                 c.parent_id IS NOT NULL ASC,
+                 c.reg_date ASC,
+                 c.comment_no ASC
     </select>
 
-    <!-- 댓글 수정 -->
+    <select id="selectCommentByNo" parameterType="int" resultType="CommentVO">
+        SELECT
+            comment_no AS commentNo,
+            review_no  AS reviewNo,
+            parent_id  AS parentId,
+            user_no    AS userNo,
+            content    AS content,
+            reg_date   AS regDate
+        FROM comment
+        WHERE comment_no = #{commentNo}
+    </select>
+
     <update id="updateComment" parameterType="CommentVO">
         UPDATE comment
         SET content = #{content}
         WHERE comment_no = #{commentNo}
-          AND user_no    = #{userNo}
+          AND user_no = #{userNo}
     </update>
 
-    <!-- 댓글 삭제 -->
     <delete id="deleteComment" parameterType="CommentVO">
         DELETE FROM comment
         WHERE comment_no = #{commentNo}
-          AND user_no    = #{userNo}
+          AND user_no = #{userNo}
     </delete>
+
+    <update id="reassignCommentsToUser">
+        UPDATE comment
+        SET user_no = #{toUserNo}
+        WHERE user_no = #{fromUserNo}
+    </update>
 
 </mapper>

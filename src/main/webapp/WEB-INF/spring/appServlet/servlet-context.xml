@@ -4,6 +4,7 @@
 	xmlns:beans="http://www.springframework.org/schema/beans"
 	xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
 	xsi:schemaLocation="
 		http://www.springframework.org/schema/mvc
 		https://www.springframework.org/schema/mvc/spring-mvc.xsd
@@ -12,7 +13,9 @@
 		http://www.springframework.org/schema/context
 		https://www.springframework.org/schema/context/spring-context.xsd
 		http://www.springframework.org/schema/aop
-		http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+		http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx
+		https://www.springframework.org/schema/tx/spring-tx.xsd">
 
 	<annotation-driven/>
 	<context:property-placeholder location="classpath:app.properties" ignore-resource-not-found="true"/>
@@ -39,6 +42,7 @@
 
 	<!-- AOP -->
 	<aop:aspectj-autoproxy/>
+	<tx:annotation-driven transaction-manager="transactionManager"/>
 
 	<!-- 파일 업로드 (2MB) -->
 	<beans:bean id="multipartResolver"
@@ -69,6 +73,32 @@
 	
 	<!-- 관리자 인터셉터 -->
 	<interceptors>
+	    <interceptor>
+	        <mapping path="/user/mypage"/>
+	        <mapping path="/user/edit"/>
+	        <mapping path="/user/changePw"/>
+	        <mapping path="/user/withdraw"/>
+	        <mapping path="/collection/list"/>
+	        <mapping path="/collection/create"/>
+	        <mapping path="/collection/update"/>
+	        <mapping path="/collection/delete"/>
+	        <mapping path="/collection/movie/toggle"/>
+	        <mapping path="/review/write"/>
+	        <mapping path="/review/update"/>
+	        <mapping path="/review/delete"/>
+	        <mapping path="/review/like"/>
+	        <mapping path="/comment/write"/>
+	        <mapping path="/comment/update"/>
+	        <mapping path="/comment/delete"/>
+	        <mapping path="/movie/watchlist"/>
+	        <mapping path="/movie/search/delete"/>
+	        <mapping path="/movie/search/deleteAll"/>
+	        <mapping path="/movie/watched/toggle"/>
+	        <mapping path="/notification/read"/>
+	        <mapping path="/notification/readAll"/>
+	        <mapping path="/report/insert"/>
+	        <beans:bean class="com.spring.springGreen8.LoginSessionInterceptor"/>
+	    </interceptor>
 	    <interceptor>
 	        <mapping path="/admin/**"/>
 				<beans:bean class="com.spring.springGreen8.AdminInterceptor"/>

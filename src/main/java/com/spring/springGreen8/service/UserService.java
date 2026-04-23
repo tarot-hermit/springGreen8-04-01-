@@ -24,4 +24,10 @@ public interface UserService {
 	
 	UserVO getUserByIdAndEmail(String userId, String userEmail);
 	UserVO getUserByUserId(String userId);
+
+    UserVO getUserByKakaoId(String kakaoId);
+    UserVO linkKakaoAccount(String userId, String userPw, String kakaoId);
+    UserVO joinKakaoUser(String kakaoId, String nickname, String email);
+
+    void withdrawUser(int userNo);
 }

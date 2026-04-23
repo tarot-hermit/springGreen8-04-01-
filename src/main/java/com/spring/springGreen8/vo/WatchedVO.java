@@ -9,4 +9,6 @@ public class WatchedVO {
     private String mid;       // user_id
     private int    movieId;   // TMDB movie id
     private Date   regDate;
+    private String title;
+    private String posterPath;
 }

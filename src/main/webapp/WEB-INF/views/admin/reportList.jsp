@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -8,6 +9,7 @@
   <meta charset="UTF-8">
   <title>신고 관리</title>
   <%@ include file="/WEB-INF/views/common/bs5.jsp" %>
+  <%@ include file="/WEB-INF/views/admin/adminSwal.jspf" %>
   <style>
     body { background:#0f172a; color:#fff; }
     .sidebar { width:220px; background:#1e293b; padding:24px 0; flex-shrink:0; position:fixed; top:0; left:0; height:100vh; z-index:100; }
@@ -23,11 +25,13 @@
     .table-dark-custom th { background:#0f172a; color:#64748b; font-size:13px; font-weight:600; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
     .table-dark-custom td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; font-size:14px; }
     .status-badge { padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
-    .status-PENDING   { background:rgba(251,191,36,0.15);  color:#fbbf24; }
-    .status-PROCESSED { background:rgba(52,208,88,0.15);   color:#34d058; }
-    .status-REJECTED  { background:rgba(148,163,184,0.1);  color:#94a3b8; }
+    .status-PENDING { background:rgba(251,191,36,0.15); color:#fbbf24; }
+    .status-PROCESSED { background:rgba(52,208,88,0.15); color:#34d058; }
+    .status-REJECTED { background:rgba(148,163,184,0.1); color:#94a3b8; }
     .type-badge { padding:3px 8px; border-radius:6px; font-size:11px; background:rgba(96,165,250,0.1); color:#60a5fa; }
-    .reason-cell { max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .reason-cell { max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .movie-link { color:#60a5fa; text-decoration:none; }
+    .movie-link:hover { text-decoration:underline; }
     input[type=text] { background:#0f172a; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:8px 14px; }
     input[type=text]::placeholder { color:#475569; }
   </style>
@@ -48,10 +52,9 @@
   <div class="main-area">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="page-title mb-0">
-        신고 관리
-        <span style="font-size:1rem;color:#64748b;font-weight:400;">(${reports.size()}건)</span>
+        신고 관리 <span style="font-size:1rem;color:#64748b;font-weight:400;">(${reports.size()}건)</span>
       </div>
-      <input type="text" id="searchInput" placeholder="신고자 / 사유 검색..." oninput="filterTable()" style="width:220px;">
+      <input type="text" id="searchInput" placeholder="신고자 / 사유 / 영화 검색..." oninput="filterTable()" style="width:260px;">
     </div>
 
     <div class="table-dark-custom">
@@ -62,6 +65,7 @@
             <th>유형</th>
             <th>신고자</th>
             <th>대상 ID</th>
+            <th>영화</th>
             <th>사유</th>
             <th>상태</th>
             <th>신고일</th>
@@ -70,28 +74,43 @@
         </thead>
         <tbody>
           <c:forEach var="r" items="${reports}" varStatus="st">
-          <tr id="row-${r.reportId}">
-            <td style="color:#475569;">${st.index+1}</td>
-            <td><span class="type-badge">${r.targetType}</span></td>
-            <td style="font-weight:600;">${r.reporterMid}</td>
-            <td style="color:#64748b;">${r.targetId}</td>
-            <td class="reason-cell" title="${r.reason}">${r.reason}</td>
-            <td>
-              <span class="status-badge status-${r.status}">${r.status}</span>
-            </td>
-            <td style="color:#475569;">${r.regDate}</td>
-            <td>
-              <c:if test="${r.status == 'PENDING'}">
-                <button class="btn btn-sm btn-outline-success me-1"
-                        onclick="updateStatus(${r.reportId}, 'PROCESSED')">처리</button>
-                <button class="btn btn-sm btn-outline-secondary"
-                        onclick="updateStatus(${r.reportId}, 'REJECTED')">기각</button>
-              </c:if>
-              <c:if test="${r.status != 'PENDING'}">
-                <span style="color:#475569;font-size:12px;">완료</span>
-              </c:if>
-            </td>
-          </tr>
+            <tr id="row-${r.reportId}">
+              <td style="color:#475569;">${st.index+1}</td>
+              <td><span class="type-badge">${r.targetType}</span></td>
+              <td style="font-weight:600;">${fn:escapeXml(r.reporterMid)}</td>
+              <td style="color:#64748b;">${r.targetId}</td>
+              <td>
+                <c:choose>
+                  <c:when test="${r.targetType == 'REVIEW' && r.tmdbId > 0}">
+                    <a href="${ctp}/movie/detail/${r.tmdbId}" class="movie-link" title="${fn:escapeXml(r.movieTitle)}">
+                      <c:choose>
+                        <c:when test="${empty r.movieTitle}">${r.tmdbId}</c:when>
+                        <c:otherwise>${fn:escapeXml(r.movieTitle)}</c:otherwise>
+                      </c:choose>
+                    </a>
+                  </c:when>
+                  <c:otherwise>
+                    <span style="color:#475569;">-</span>
+                  </c:otherwise>
+                </c:choose>
+              </td>
+              <td class="reason-cell" title="${fn:escapeXml(r.reason)}">${fn:escapeXml(r.reason)}</td>
+              <td>
+                <span class="status-badge status-${r.status}">${r.status}</span>
+              </td>
+              <td style="color:#475569;"><fmt:formatDate value="${r.regDate}" pattern="yyyy년 MM월 dd일 HH:mm:ss"/></td>
+              <td>
+                <c:if test="${r.status == 'PENDING'}">
+                  <button class="btn btn-sm btn-outline-success me-1"
+                          onclick="updateStatus(${r.reportId}, 'PROCESSED')">처리</button>
+                  <button class="btn btn-sm btn-outline-secondary"
+                          onclick="updateStatus(${r.reportId}, 'REJECTED')">기각</button>
+                </c:if>
+                <c:if test="${r.status != 'PENDING'}">
+                  <span style="color:#475569;font-size:12px;">완료</span>
+                </c:if>
+              </td>
+            </tr>
           </c:forEach>
         </tbody>
       </table>
@@ -110,11 +129,28 @@ function filterTable() {
 }
 
 function updateStatus(reportId, status) {
-    var msg = status === 'PROCESSED' ? '처리 완료로 변경하시겠습니까?' : '기각 처리하시겠습니까?';
-    if (!confirm(msg)) return;
-    $.post(ctp + '/admin/report/status', { reportId: reportId, status: status }, function(res) {
-        if (res === 'ok') { location.reload(); }
-        else alert('실패했습니다.');
+    var isProcessed = status === 'PROCESSED';
+    adminConfirm({
+        title: isProcessed ? '\uC2E0\uACE0 \uCC98\uB9AC' : '\uC2E0\uACE0 \uAE30\uAC01',
+        text: isProcessed
+            ? '\uC2E0\uACE0\uB97C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? \uB9AC\uBDF0 \uC2E0\uACE0\uB294 \uBE14\uB77C\uC778\uB4DC \uBB38\uAD6C\uB85C \uBCC0\uACBD\uB429\uB2C8\uB2E4.'
+            : '\uC774 \uC2E0\uACE0\uB97C \uAE30\uAC01 \uCC98\uB9AC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?',
+        confirmButtonText: isProcessed ? '\uCC98\uB9AC' : '\uAE30\uAC01'
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+
+        $.post(ctp + '/admin/report/status', { reportId: reportId, status: status }, function(res) {
+            if (res === 'ok') {
+                adminToast('success', isProcessed ? '\uC2E0\uACE0\uB97C \uCC98\uB9AC\uD588\uC2B5\uB2C8\uB2E4.' : '\uC2E0\uACE0\uB97C \uAE30\uAC01\uD588\uC2B5\uB2C8\uB2E4.').then(function() {
+                    location.reload();
+                });
+            }
+            else {
+                adminAlert('error', '\uCC98\uB9AC \uC2E4\uD328', '\uC2E0\uACE0 \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
+            }
+        }).fail(function() {
+            adminAlert('error', '\uC694\uCCAD \uC2E4\uD328', '\uC2E0\uACE0 \uCC98\uB9AC \uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.');
+        });
     });
 }
 </script>

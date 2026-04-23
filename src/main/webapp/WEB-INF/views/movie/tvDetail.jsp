@@ -1,4 +1,4 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
@@ -25,6 +25,7 @@
   <c:set var="backListUrl" value="${ctp}/movie/genre?genreId=${param.genreId}&genreName=${param.genreName}&page=${empty param.page ? 1 : param.page}"/>
   <c:set var="backListLabel" value="장르 목록"/>
 </c:if>
+<c:set var="detailSearchMediaType" value="${tv.animation ? 'animation' : 'tv'}"/>
 <!DOCTYPE html>
 <html>
 <head>
@@ -153,6 +154,30 @@
       border-radius: 18px;
       padding: 20px;
       line-height: 1.85;
+    }
+    .keyword-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .keyword-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(40,167,69,0.12);
+      border: 1px solid rgba(52,208,88,0.22);
+      color: #d8ffe3;
+      font-size: 0.9rem;
+      line-height: 1;
+      text-decoration: none;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+    .keyword-chip:hover {
+      transform: translateY(-1px);
+      border-color: rgba(52,208,88,0.46);
+      background: rgba(40,167,69,0.2);
+      color: #fff;
     }
     .info-table {
       width: 100%;
@@ -299,7 +324,7 @@
       <div class="col-lg-auto text-center text-lg-start">
         <img src="https://image.tmdb.org/t/p/w500${tv.posterPath}"
              class="poster"
-             onerror="this.src='https://via.placeholder.com/280x420?text=No+Image'">
+             onerror="this.src='https://placehold.co/280x420?text=No+Image'">
       </div>
       <div class="col-lg">
         <div class="page-chip">
@@ -348,7 +373,11 @@
           <a href="${backListUrl}" class="btn btn-success rounded-pill px-4">
             <i class="fa fa-arrow-left me-1"></i> ${backListLabel}
           </a>
-          <a href="${ctp}/movie/search?q=${tv.title}&mediaType=tv" class="btn btn-outline-light rounded-pill px-4">
+          <c:url var="tvSearchUrl" value="/movie/search">
+            <c:param name="q" value="${tv.title}"/>
+            <c:param name="mediaType" value="${detailSearchMediaType}"/>
+          </c:url>
+          <a href="${tvSearchUrl}" class="btn btn-outline-light rounded-pill px-4">
             <i class="fa fa-search me-1"></i> 검색 결과 보기
           </a>
         </div>
@@ -388,6 +417,21 @@
         </div>
       </div>
 
+      <c:if test="${not empty keywords}">
+        <div class="card-shell mb-4">
+          <h4 class="section-title">키워드</h4>
+          <div class="keyword-cloud">
+            <c:forEach var="keyword" items="${keywords}">
+              <c:url var="keywordSearchUrl" value="/movie/search">
+                <c:param name="q" value="# ${keyword.name}"/>
+                <c:param name="mediaType" value="${detailSearchMediaType}"/>
+              </c:url>
+              <a href="${keywordSearchUrl}" class="keyword-chip"># ${keyword.name}</a>
+            </c:forEach>
+          </div>
+        </div>
+      </c:if>
+
       <c:if test="${not empty tv.seasons}">
         <div class="card-shell mb-4">
           <h4 class="section-title">시즌 선택</h4>
@@ -417,7 +461,7 @@
                     <img src="https://image.tmdb.org/t/p/w500${season.posterPath}"
                          alt="${season.name}"
                          class="season-poster"
-                         onerror="this.src='https://via.placeholder.com/500x132?text=Season'">
+                         onerror="this.src='https://placehold.co/500x132?text=Season'">
                   </c:when>
                   <c:otherwise>
                     <div class="season-poster d-flex align-items-center justify-content-center">
@@ -468,6 +512,9 @@
                   <iframe
                     src="https://www.youtube.com/embed/${video.key}"
                     title="${video.name}"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"
                     style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
                 </div>
                 <p class="mt-2 mb-0 muted small">${video.name}</p>
@@ -497,7 +544,7 @@
                         <img src="https://image.tmdb.org/t/p/w500${episode.stillPath}"
                              alt="${episode.name}"
                              class="episode-still"
-                             onerror="this.src='https://via.placeholder.com/500x281?text=Episode'">
+                             onerror="this.src='https://placehold.co/500x281?text=Episode'">
                       </c:when>
                       <c:otherwise>
                         <div class="episode-still d-flex align-items-center justify-content-center">
@@ -549,7 +596,7 @@
                   <c:choose>
                     <c:when test="${not empty actor['profile_path']}">
                       <img src="https://image.tmdb.org/t/p/w185${actor['profile_path']}"
-                           onerror="this.src='https://via.placeholder.com/185x180?text=No+Image'">
+                           onerror="this.src='https://placehold.co/185x180?text=No+Image'">
                     </c:when>
                     <c:otherwise>
                       <div style="height:180px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;">

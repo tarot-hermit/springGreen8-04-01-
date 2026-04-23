@@ -1,4 +1,4 @@
-﻿package com.spring.springGreen8.dao;
+package com.spring.springGreen8.dao;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +17,8 @@ public interface SearchHistoryDAO {
     int deleteSearch(@Param("searchNo") int searchNo, @Param("userNo") int userNo);
 
     int deleteAllSearch(int userNo);
+
+    int deleteSearchByKeyword(@Param("userNo") int userNo, @Param("keyword") String keyword);
 
     List<Map<String, Object>> selectPopularKeywords();
 }

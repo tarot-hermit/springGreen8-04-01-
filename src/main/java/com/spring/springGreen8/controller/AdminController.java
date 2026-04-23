@@ -1,7 +1,10 @@
 package com.spring.springGreen8.controller;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,6 +16,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.spring.springGreen8.dao.AdminDAO;
 import com.spring.springGreen8.dao.SearchHistoryDAO;
+import com.spring.springGreen8.service.AdminService;
+import com.spring.springGreen8.service.UserService;
+import com.spring.springGreen8.util.UserSessionRegistry;
 import com.spring.springGreen8.vo.ReportVO;
 import com.spring.springGreen8.vo.ReviewVO;
 import com.spring.springGreen8.vo.UserVO;
@@ -28,16 +34,31 @@ public class AdminController {
 
     @Autowired
     private AdminDAO adminDAO;
-    
 
-	@Autowired
-	private SearchHistoryDAO searchHistoryDAO;
+    @Autowired
+    private SearchHistoryDAO searchHistoryDAO;
+
+    @Autowired
+    private AdminService adminService;
+
+    @Autowired
+    private UserService userService;
 
     // 대시보드
     @RequestMapping("/dashboard")
     public String dashboard(Model model) {
         Map<String, Object> stats = adminDAO.getDashboardStats();
+        if (stats == null) {
+            stats = Collections.emptyMap();
+        }
+
+        List<Map<String, Object>> popularKeywords = searchHistoryDAO.selectPopularKeywords();
+        if (popularKeywords == null) {
+            popularKeywords = Collections.emptyList();
+        }
+
         model.addAttribute("stats", stats);
+        model.addAttribute("popularKeywords", popularKeywords);
         return "admin/dashboard";
     }
 
@@ -53,17 +74,36 @@ public class AdminController {
     @RequestMapping(value = "/user/role", method = RequestMethod.POST)
     @ResponseBody
     public String updateRole(@RequestParam int userNo,
-                             @RequestParam String userRole) {
+                             @RequestParam String userRole,
+                             HttpSession session) {
         int result = adminDAO.updateUserRole(userNo, userRole);
-        return result > 0 ? "ok" : "fail";
+        if (result <= 0) return "fail";
+
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser != null && loginUser.getUserNo() == userNo) {
+            UserVO refreshedUser = userService.getUser(userNo);
+            if (refreshedUser != null) {
+                session.setAttribute("loginUser", refreshedUser);
+                if (!"ADMIN".equalsIgnoreCase(refreshedUser.getUserRole())) {
+                    return "self_downgraded";
+                }
+            }
+        }
+
+        return "ok";
     }
 
     // 회원 강제 탈퇴 Ajax — userNo 기반
     @RequestMapping(value = "/user/delete", method = RequestMethod.POST)
     @ResponseBody
     public String deleteUser(@RequestParam int userNo) {
-        int result = adminDAO.deleteUser(userNo);
-        return result > 0 ? "ok" : "fail";
+        try {
+            userService.withdrawUser(userNo);
+            UserSessionRegistry.invalidateUserSessions(userNo);
+            return "ok";
+        } catch (Exception e) {
+            return "fail";
+        }
     }
 
     // 리뷰 목록
@@ -87,7 +127,7 @@ public class AdminController {
     public String reportList(Model model) {
         List<ReportVO> reports = adminDAO.getAllReports();
         model.addAttribute("reports", reports);
-        return "admin/reportListV2";
+        return "admin/reportList";
     }
 
     // 신고 상태 변경 Ajax
@@ -95,24 +135,7 @@ public class AdminController {
     @ResponseBody
     public String updateReportStatus(@RequestParam int reportId,
                                      @RequestParam String status) {
-        if ("PROCESSED".equalsIgnoreCase(status)) {
-            ReportVO report = adminDAO.getReportById(reportId);
-            if (report == null) return "fail";
-
-            if ("REVIEW".equalsIgnoreCase(report.getTargetType())) {
-                int blindResult = adminDAO.blindReview(report.getTargetId(), BLIND_REVIEW_MESSAGE_ASCII);
-                if (blindResult <= 0) return "fail";
-            }
-        }
-
-        int result = adminDAO.updateReportStatus(reportId, status);
-        return result > 0 ? "ok" : "fail";
+        return adminService.updateReportStatus(reportId, status);
     }
-    
- // 검색어 통계 (dashboard 에서 ajax 또는 별도 페이지)
-    @RequestMapping("/stats/keywords")
-    public String keywordStats(Model model) {
-        model.addAttribute("popularKeywords", searchHistoryDAO.selectPopularKeywords());
-        return "admin/dashboard";  // dashboard 에 함께 표시
-    }
+
 }

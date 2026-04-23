@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.spring.springGreen8.dao.MovieDAO;
 import com.spring.springGreen8.dao.WatchlistDAO;
@@ -11,6 +12,7 @@ import com.spring.springGreen8.vo.MovieVO;
 import com.spring.springGreen8.vo.WatchlistVO;
 
 @Service
+@Transactional(readOnly = true)
 public class WatchlistServiceImpl implements WatchlistService {
 
 	@Autowired
@@ -24,6 +26,7 @@ public class WatchlistServiceImpl implements WatchlistService {
 	
 	
 	@Override
+	@Transactional(rollbackFor = Exception.class)
 	public String toggleWatch(WatchlistVO vo) {
 		// tmdbId > movie_no 변환
 		MovieVO movie = movieDAO.selectMovieByTmdbId(vo.getMovieNo());
@@ -55,11 +58,6 @@ public class WatchlistServiceImpl implements WatchlistService {
 	@Override
 	public List<WatchlistVO> getWatchlistByUserNo(int userNo) {
 		return watchlistDAO.selectWatchlistByUserNo(userNo);
-	}
-
-	@Override
-	public int updateWatchStatus(WatchlistVO vo) {
-		return watchlistDAO.updateWatchStatus(vo);
 	}
 
 }

@@ -384,7 +384,10 @@ function checkCode() {
         url: '${ctp}/user/findId/checkCode', type: 'POST',
         data: { code: code },
         success: function(res) {
-            if (res != 'fail') {
+            if (res == 'expired') {
+                $('#codeMsg').html('<span class="text-danger">인증코드가 만료되었습니다. 다시 요청해주세요.</span>');
+                Swal.fire({ icon: 'error', title: '인증코드 만료', text: '인증코드 유효시간(5분)이 지났습니다. 다시 요청해주세요.' });
+            } else if (res != 'fail') {
                 $('#codeMsg').html('<span class="text-success">✓ 인증이 완료되었습니다.</span>');
                 $('#step1').hide();
                 $('#foundId').text(res);

@@ -422,6 +422,10 @@ function checkCode() {
                 $('#step2').show();
                 codeVerified = true;
                 Toast.fire({ icon: 'success', title: '인증 완료!' });
+            } else if (res == 'expired') {
+                $('#codeMsg').html('<span class="text-danger">인증코드가 만료되었습니다. 다시 요청해주세요.</span>');
+                Swal.fire({ icon: 'error', title: '인증코드 만료', text: '인증코드 유효시간(5분)이 지났습니다. 다시 요청해주세요.' });
+                codeVerified = false;
             } else {
                 $('#codeMsg').html('<span class="text-danger">인증코드가 올바르지 않습니다.</span>');
                 Swal.fire({ icon: 'error', title: '인증 실패', text: '인증코드가 올바르지 않습니다.' });

@@ -10,6 +10,8 @@ public interface UserDAO {
 	 
 		int insertUser(UserVO vo);
 
+		int insertSocialUser(UserVO vo);
+
 	    // 아이디 중복 체크
 	    int checkId(String userId);
 
@@ -33,4 +35,14 @@ public interface UserDAO {
 	    int updatePw(UserVO vo);
 	    
 	    UserVO selectUserByEmail(String userEmail);
+
+	    UserVO selectUserByKakaoId(String kakaoId);
+
+	    int updateKakaoLink(@Param("userNo") int userNo, @Param("kakaoId") String kakaoId);
+
+    // 회원 탈퇴 (소프트 삭제)
+    int softDeleteUser(int userNo);
+
+    // 탈퇴 아이디 보존 (중복 가입 방지)
+    int insertWithdrawnUserId(String userId);
 }

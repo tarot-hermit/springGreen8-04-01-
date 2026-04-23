@@ -12,9 +12,16 @@
                 #{userAddr1}, #{userAddr2}, #{userZipcode})
     </insert>
 
+    <insert id="insertSocialUser" parameterType="UserVO">
+        INSERT INTO users (user_id, user_pw, user_name, user_email, kakao_id, login_provider)
+        VALUES (#{userId}, #{userPw}, #{userName}, #{userEmail}, #{kakaoId}, 'KAKAO')
+    </insert>
+
     <!-- 아이디 중복 체크 -->
     <select id="checkId" parameterType="String" resultType="int">
-        SELECT COUNT(*) FROM users WHERE user_id = #{userId}
+        SELECT
+            (SELECT COUNT(*) FROM users WHERE user_id = #{userId})
+          + (SELECT COUNT(*) FROM withdrawn_user_id WHERE user_id = #{userId})
     </select>
 
     <!-- 로그인 -->
@@ -31,9 +38,12 @@
             user_addr1   AS userAddr1,
             user_addr2   AS userAddr2,
             user_zipcode AS userZipcode,
+            kakao_id     AS kakaoId,
+            login_provider AS loginProvider,
             join_date    AS joinDate
         FROM users
         WHERE user_id = #{userId}
+          AND (is_deleted = 0 OR is_deleted IS NULL)
     </select>
 
     <!-- 회원 조회 (번호) -->
@@ -50,6 +60,8 @@
             user_addr1   AS userAddr1,
             user_addr2   AS userAddr2,
             user_zipcode AS userZipcode,
+            kakao_id     AS kakaoId,
+            login_provider AS loginProvider,
             join_date    AS joinDate
         FROM users
         WHERE user_no = #{userNo}
@@ -108,8 +120,49 @@
 	    FROM users
 	    WHERE user_email = #{userEmail}
 	</select>
-	
-	
-	
-	
+
+    <select id="selectUserByKakaoId" parameterType="String" resultType="UserVO">
+        SELECT
+            user_no      AS userNo,
+            user_id      AS userId,
+            user_pw      AS userPw,
+            user_name    AS userName,
+            user_email   AS userEmail,
+            user_img     AS userImg,
+            user_bio     AS userBio,
+            user_role    AS userRole,
+            user_addr1   AS userAddr1,
+            user_addr2   AS userAddr2,
+            user_zipcode AS userZipcode,
+            kakao_id     AS kakaoId,
+            login_provider AS loginProvider,
+            join_date    AS joinDate
+        FROM users
+        WHERE kakao_id = #{kakaoId}
+    </select>
+
+    <update id="updateKakaoLink">
+        UPDATE users
+        SET kakao_id = #{kakaoId},
+            login_provider = CASE
+                WHEN login_provider IS NULL OR login_provider = '' THEN 'LOCAL'
+                ELSE login_provider
+            END
+        WHERE user_no = #{userNo}
+    </update>
+
+    <!-- 소프트 삭제 (탈퇴) -->
+    <update id="softDeleteUser" parameterType="int">
+        UPDATE users
+        SET is_deleted = 1,
+            deleted_at = NOW()
+        WHERE user_no = #{userNo}
+    </update>
+
+    <!-- 탈퇴 아이디 보존 (재가입 방지) -->
+    <insert id="insertWithdrawnUserId" parameterType="String">
+        INSERT IGNORE INTO withdrawn_user_id (user_id)
+        VALUES (#{userId})
+    </insert>
+
 </mapper>

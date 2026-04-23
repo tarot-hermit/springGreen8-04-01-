@@ -1,4 +1,4 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
@@ -77,7 +77,7 @@
         <div class="col-6 col-md-3 col-lg-2">
           <div class="content-card" onclick="location.href='${ctp}/movie/detail/${item.tmdbId}?from=all&country=${country}'">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
-                 onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+                 onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-movie">MOVIE</span>
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
             <p class="text-warning mb-0 small">★ ${item.voteAverage}</p>
@@ -95,7 +95,7 @@
         <div class="col-6 col-md-3 col-lg-2">
           <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=all&country=${country}'">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
-                 onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+                 onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-tv">TV</span>
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
             <p class="text-warning mb-0 small">★ ${item.voteAverage}</p>
@@ -113,7 +113,7 @@
         <div class="col-6 col-md-3 col-lg-2">
           <div class="content-card" onclick="location.href='${ctp}/movie/detail/${item.tmdbId}?from=all&country=${country}'">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
-                 onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+                 onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-animation">ANI MOVIE</span>
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
             <p class="text-warning mb-0 small">★ ${item.voteAverage}</p>
@@ -131,7 +131,7 @@
         <div class="col-6 col-md-3 col-lg-2">
           <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=all&country=${country}'">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
-                 onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+                 onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-animation">ANI TV</span>
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
             <p class="text-warning mb-0 small">★ ${item.voteAverage}</p>

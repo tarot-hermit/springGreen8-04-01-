@@ -16,5 +16,7 @@ public class UserVO {
     private String userAddr1;
     private String userAddr2;
     private String userZipcode;
+    private String kakaoId;
+    private String loginProvider;
     private Date joinDate;
 }

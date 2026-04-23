@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -145,6 +146,32 @@
       margin-bottom:0;
     }
 
+    .setting-section{
+      margin-top:32px;
+      padding-top:28px;
+      border-top:1px solid var(--watcha-line);
+    }
+
+    .section-title{
+      font-size:1.05rem;
+      font-weight:800;
+      color:#111827;
+      margin-bottom:6px;
+    }
+
+    .section-desc{
+      font-size:13px;
+      color:var(--watcha-sub);
+      margin-bottom:18px;
+    }
+
+    .input-guide{
+      min-height:18px;
+      font-size:12px;
+      margin-top:6px;
+      color:var(--watcha-sub);
+    }
+
     .edit-btn{
       height:54px;
       border:none;
@@ -204,22 +231,26 @@
   <script>
     'use strict';
 
+    const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$/;
+    const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]{2,10}$/;
+    const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
     function previewImage(input) {
       const file = input.files[0];
       const preview = document.getElementById('profilePreview');
 
       if (!file) return;
 
-      const maxSize = 2 * 1024 * 1024; // 현재 서버 제한 2MB
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        alert('이미지는 2MB 이하만 업로드 가능합니다.');
+        alert('이미지는 10MB 이하만 업로드 가능합니다.');
         input.value = '';
         return;
       }
 
       const ext = file.name.substring(file.name.lastIndexOf('.') + 1).toLowerCase();
-      if (ext !== 'jpg' && ext !== 'jpeg' && ext !== 'png' && ext !== 'gif' && ext !== 'webp') {
-        alert('jpg, jpeg, png, gif, webp 파일만 업로드 가능합니다.');
+      if (ext !== 'jpg' && ext !== 'jpeg' && ext !== 'png' && ext !== 'gif') {
+        alert('jpg, jpeg, png, gif 파일만 업로드 가능합니다.');
         input.value = '';
         return;
       }
@@ -230,6 +261,76 @@
       };
       reader.readAsDataURL(file);
     }
+
+    $(function() {
+      $('#profileForm').on('submit', function(e) {
+        var userName = $('input[name="userName"]').val().trim();
+        var userEmail = $('input[name="userEmail"]').val().trim();
+        var userBio = $('textarea[name="userBio"]').val().trim();
+
+        if (!NICKNAME_REGEX.test(userName)) {
+          alert('닉네임은 한글, 영문, 숫자 2~10자로 입력해주세요.');
+          e.preventDefault();
+          return;
+        }
+
+        if (!EMAIL_REGEX.test(userEmail)) {
+          alert('올바른 이메일 형식으로 입력해주세요.');
+          e.preventDefault();
+          return;
+        }
+
+        if (userBio.length > 300) {
+          alert('자기소개는 300자 이하로 입력해주세요.');
+          e.preventDefault();
+        }
+      });
+
+      $('#newPw').on('input', function() {
+        if (!PASSWORD_REGEX.test($(this).val())) {
+          $('#pwGuide').html('<span class="text-danger">영문+숫자+특수문자(!@#$%^&*) 8~20자로 입력해주세요.</span>');
+        } else {
+          $('#pwGuide').html('<span class="text-success">사용 가능한 비밀번호 형식입니다.</span>');
+        }
+      });
+
+      $('#newPwCheck').on('input', function() {
+        if ($('#newPw').val() !== $(this).val()) {
+          $('#pwMatchGuide').html('<span class="text-danger">비밀번호가 일치하지 않습니다.</span>');
+        } else {
+          $('#pwMatchGuide').html('<span class="text-success">비밀번호가 일치합니다.</span>');
+        }
+      });
+
+      $('#passwordForm').on('submit', function(e) {
+        var currentPw = $('#currentPw').val();
+        var newPw = $('#newPw').val();
+        var newPwCheck = $('#newPwCheck').val();
+
+        if (!currentPw || !newPw || !newPwCheck) {
+          alert('현재 비밀번호와 새 비밀번호를 모두 입력해주세요.');
+          e.preventDefault();
+          return;
+        }
+
+        if (!PASSWORD_REGEX.test(newPw)) {
+          alert('새 비밀번호는 영문, 숫자, 특수문자(!@#$%^&*)를 포함한 8~20자로 입력해주세요.');
+          e.preventDefault();
+          return;
+        }
+
+        if (newPw !== newPwCheck) {
+          alert('새 비밀번호 확인이 일치하지 않습니다.');
+          e.preventDefault();
+          return;
+        }
+
+        if (currentPw === newPw) {
+          alert('새 비밀번호는 현재 비밀번호와 다르게 설정해주세요.');
+          e.preventDefault();
+        }
+      });
+    });
   </script>
 </head>
 <body>
@@ -246,7 +347,7 @@
 
       <div class="edit-body">
         <!-- 중요: multipart/form-data -->
-        <form action="${ctp}/user/edit" method="post" enctype="multipart/form-data">
+        <form id="profileForm" action="${ctp}/user/edit" method="post" enctype="multipart/form-data">
 
           <!-- 중요: 파일 input name = imgFile -->
           <div class="profile-box">
@@ -259,7 +360,7 @@
             <input type="file"
                    name="imgFile"
                    class="form-control watcha-input"
-                   accept=".jpg,.jpeg,.png,.gif,.webp"
+                   accept=".jpg,.jpeg,.png,.gif"
                    onchange="previewImage(this)">
             <p class="file-guide">10MB 이하 이미지 파일만 업로드 가능합니다.</p>
           </div>
@@ -267,33 +368,36 @@
           <div class="mb-3">
             <label class="form-label">닉네임</label>
             <input type="text"
-                   name="userName"
-                   value="${user.userName}"
-                   class="form-control watcha-input"
-                   placeholder="닉네임 입력">
+                    name="userName"
+                    value="${fn:escapeXml(user.userName)}"
+                    class="form-control watcha-input"
+                    placeholder="한글/영문/숫자 2~10자"
+                    maxlength="10">
           </div>
 
           <div class="mb-3">
             <label class="form-label">이메일</label>
             <input type="email"
-                   name="userEmail"
-                   value="${user.userEmail}"
-                   class="form-control watcha-input"
-                   placeholder="이메일 입력">
+                    name="userEmail"
+                    value="${fn:escapeXml(user.userEmail)}"
+                    class="form-control watcha-input"
+                    placeholder="이메일 입력"
+                    maxlength="100">
           </div>
 
           <div class="mb-3">
             <label class="form-label">자기소개</label>
             <textarea name="userBio"
                       class="form-control watcha-input"
-                      placeholder="간단한 자기소개를 입력해보세요">${user.userBio}</textarea>
+                      placeholder="간단한 자기소개를 입력해보세요"
+                      maxlength="300">${fn:escapeXml(user.userBio)}</textarea>
           </div>
 
           <div class="mb-3">
             <label class="form-label">우편번호</label>
             <input type="text"
                    name="userZipcode"
-                   value="${user.userZipcode}"
+                   value="${fn:escapeXml(user.userZipcode)}"
                    class="form-control watcha-input"
                    placeholder="우편번호">
           </div>
@@ -302,7 +406,7 @@
             <label class="form-label">기본주소</label>
             <input type="text"
                    name="userAddr1"
-                   value="${user.userAddr1}"
+                   value="${fn:escapeXml(user.userAddr1)}"
                    class="form-control watcha-input"
                    placeholder="기본주소">
           </div>
@@ -311,7 +415,7 @@
             <label class="form-label">상세주소</label>
             <input type="text"
                    name="userAddr2"
-                   value="${user.userAddr2}"
+                   value="${fn:escapeXml(user.userAddr2)}"
                    class="form-control watcha-input"
                    placeholder="상세주소">
           </div>
@@ -322,6 +426,49 @@
             <a href="${ctp}/user/mypage">마이페이지로 돌아가기</a>
           </div>
         </form>
+
+        <div class="setting-section">
+          <div class="section-title">비밀번호 변경</div>
+          <p class="section-desc">현재 비밀번호를 확인한 뒤 새 비밀번호로 안전하게 변경합니다.</p>
+
+          <form id="passwordForm" action="${ctp}/user/changePw" method="post">
+            <div class="mb-3">
+              <label class="form-label">현재 비밀번호</label>
+              <input type="password"
+                     id="currentPw"
+                     name="currentPw"
+                     class="form-control watcha-input"
+                     placeholder="현재 비밀번호 입력"
+                     autocomplete="current-password"
+                     maxlength="20">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">새 비밀번호</label>
+              <input type="password"
+                     id="newPw"
+                     name="newPw"
+                     class="form-control watcha-input"
+                     placeholder="영문+숫자+특수문자 8~20자"
+                     autocomplete="new-password"
+                     maxlength="20">
+              <div id="pwGuide" class="input-guide"></div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label">새 비밀번호 확인</label>
+              <input type="password"
+                     id="newPwCheck"
+                     class="form-control watcha-input"
+                     placeholder="새 비밀번호 다시 입력"
+                     autocomplete="new-password"
+                     maxlength="20">
+              <div id="pwMatchGuide" class="input-guide"></div>
+            </div>
+
+            <button type="submit" class="btn edit-btn w-100">비밀번호 변경</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>

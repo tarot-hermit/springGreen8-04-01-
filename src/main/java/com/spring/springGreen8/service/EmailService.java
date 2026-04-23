@@ -1,10 +1,11 @@
-﻿package com.spring.springGreen8.service;
+package com.spring.springGreen8.service;
 
 import java.util.Random;
 
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,24 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    // 발신자 주소 override. 미지정 시 mail.username 값을 사용한다.
+    @Value("${mail.from:}")
+    private String fromAddress;
+
+    // SMTP 계정 이메일. fromAddress fallback으로 쓰인다.
+    @Value("${mail.username:}")
+    private String mailUsername;
+
+    // 표시 이름. 미설정 시 이메일 주소만 노출된다.
+    @Value("${mail.from.name:SpringGreen8}")
+    private String fromName;
+
+    private String resolveFromAddress() {
+        if (fromAddress != null && !fromAddress.trim().isEmpty()) return fromAddress.trim();
+        if (mailUsername != null && !mailUsername.trim().isEmpty()) return mailUsername.trim();
+        return "";
+    }
 
     public String createCode() {
         Random rand = new Random();
@@ -29,6 +48,15 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            // 발신자(From) 명시. 주소가 비어있으면 SMTP username이 자동 사용되도록 호출을 건너뛴다.
+            String from = resolveFromAddress();
+            if (!from.isEmpty()) {
+                if (fromName != null && !fromName.trim().isEmpty()) {
+                    helper.setFrom(from, fromName);
+                } else {
+                    helper.setFrom(from);
+                }
+            }
             helper.setTo(toEmail);
             helper.setSubject("[SpringGreen8] 이메일 인증 코드");
             helper.setText(

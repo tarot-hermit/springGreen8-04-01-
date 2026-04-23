@@ -12,42 +12,58 @@
     body { background: #121212; color: #fff; }
 
     .person-hero {
-      background: linear-gradient(180deg, rgba(18,18,18,0) 0%, #121212 100%),
-                  rgba(255,255,255,0.03);
+      background: linear-gradient(180deg, rgba(18,18,18,0) 0%, #121212 100%), rgba(255,255,255,0.03);
       border-bottom: 1px solid rgba(255,255,255,0.08);
       padding: 60px 0 40px;
     }
 
     .person-photo {
-      width: 160px; height: 160px; border-radius: 50%;
-      object-fit: cover; border: 3px solid rgba(255,255,255,0.15);
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(255,255,255,0.15);
       box-shadow: 0 12px 32px rgba(0,0,0,0.5);
     }
 
     .person-name {
-      font-size: 2.2rem; font-weight: 800; margin-bottom: 6px;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 6px;
     }
 
     .person-meta {
-      color: #9ca3af; font-size: 0.95rem; margin-bottom: 16px;
+      color: #9ca3af;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
     }
 
     .person-bio {
-      color: #d1d5db; line-height: 1.8; max-width: 700px;
-      display: -webkit-box; -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical; overflow: hidden;
+      color: #d1d5db;
+      line-height: 1.8;
+      max-width: 700px;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .section-title {
-      font-size: 1.2rem; font-weight: 700;
-      display: flex; align-items: center; gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 20px;
     }
 
     .section-title::before {
-      content: ''; width: 5px; height: 22px;
+      content: '';
+      width: 5px;
+      height: 22px;
       background: linear-gradient(180deg,#34d058,#28a745);
-      border-radius: 999px; display: inline-block;
+      border-radius: 999px;
+      display: inline-block;
     }
 
     .movie-grid {
@@ -59,10 +75,13 @@
     .movie-item {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px; overflow: hidden;
-      text-decoration: none; color: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      text-decoration: none;
+      color: #fff;
       transition: transform 0.18s, box-shadow 0.18s;
-      display: block; cursor: pointer;
+      display: block;
+      cursor: pointer;
     }
 
     .movie-item:hover {
@@ -72,24 +91,61 @@
     }
 
     .movie-item img {
-      width: 100%; height: 200px;
-      object-fit: cover; display: block; background: #1a1a1a;
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      background: #1a1a1a;
     }
 
     .movie-item-info { padding: 10px 12px; }
 
     .movie-item-title {
-      font-size: 13px; font-weight: 700;
-      white-space: nowrap; overflow: hidden;
-      text-overflow: ellipsis; margin-bottom: 3px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
     }
 
     .movie-item-char {
-      font-size: 11px; color: #9ca3af;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 11px;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .movie-item-date { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .movie-item-date {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .media-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 8px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      border: 1px solid transparent;
+    }
+
+    .media-badge.movie {
+      background: rgba(229, 57, 53, 0.18);
+      color: #ff8a80;
+      border-color: rgba(229, 57, 53, 0.45);
+    }
+
+    .media-badge.tv {
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.45);
+    }
   </style>
 </head>
 <body>
@@ -100,18 +156,18 @@
     <div class="d-flex align-items-center gap-4 flex-wrap">
       <img src="https://image.tmdb.org/t/p/w300${person['profile_path']}"
            class="person-photo"
-           onerror="this.src='https://via.placeholder.com/160x160?text=?'">
+           onerror="this.src='https://placehold.co/160x160?text=?'">
       <div>
         <h1 class="person-name">${person['name']}</h1>
         <div class="person-meta">
           <c:if test="${not empty person['birthday']}">
-            <span>🎂 ${person['birthday']}</span>
+            <span>출생 ${person['birthday']}</span>
           </c:if>
           <c:if test="${not empty person['place_of_birth']}">
-            &nbsp;·&nbsp;<span>📍 ${person['place_of_birth']}</span>
+            &nbsp;&middot;&nbsp;<span>출생지 ${person['place_of_birth']}</span>
           </c:if>
           <c:if test="${not empty person['known_for_department']}">
-            &nbsp;·&nbsp;<span>${person['known_for_department']}</span>
+            &nbsp;&middot;&nbsp;<span>${person['known_for_department']}</span>
           </c:if>
         </div>
         <c:if test="${not empty person['biography']}">
@@ -124,9 +180,9 @@
 
 <div class="container py-5">
   <div class="section-title">
-    출연 영화
+    출연 작품
     <span style="color:#6b7280;font-size:1rem;font-weight:400;">
-      (${movies.size()}편)
+      (${movies.size()}개)
     </span>
   </div>
 
@@ -136,13 +192,29 @@
         <c:forEach var="m" items="${movies}">
           <c:if test="${not empty m['poster_path']}">
             <div class="movie-item"
-     			   onclick="location.href='${ctp}/movie/detail/${m.id}'">
+                 onclick="location.href='${ctp}/${m['media_type'] == 'tv' ? 'movie/tv/' : 'movie/detail/'}${m.id}'">
               <img src="https://image.tmdb.org/t/p/w300${m['poster_path']}"
                    onerror="this.style.display='none'">
               <div class="movie-item-info">
-                <div class="movie-item-title">${m['title']}</div>
+                <div class="movie-item-title">
+                  <c:choose>
+                    <c:when test="${m['media_type'] == 'tv'}">${m['name']}</c:when>
+                    <c:otherwise>${m['title']}</c:otherwise>
+                  </c:choose>
+                </div>
                 <div class="movie-item-char">${m['character']}</div>
-                <div class="movie-item-date">${m['release_date']}</div>
+                <div class="movie-item-date">
+                  <c:choose>
+                    <c:when test="${m['media_type'] == 'tv'}">${m['first_air_date']}</c:when>
+                    <c:otherwise>${m['release_date']}</c:otherwise>
+                  </c:choose>
+                </div>
+                <div class="media-badge ${m['media_type'] == 'tv' ? 'tv' : 'movie'}">
+                  <c:choose>
+                    <c:when test="${m['media_type'] == 'tv'}">드라마</c:when>
+                    <c:otherwise>영화</c:otherwise>
+                  </c:choose>
+                </div>
               </div>
             </div>
           </c:if>
@@ -150,7 +222,7 @@
       </div>
     </c:when>
     <c:otherwise>
-      <p style="color:#6b7280;">출연 영화 정보가 없습니다.</p>
+      <p style="color:#6b7280;">출연 작품 정보가 없습니다.</p>
     </c:otherwise>
   </c:choose>
 </div>

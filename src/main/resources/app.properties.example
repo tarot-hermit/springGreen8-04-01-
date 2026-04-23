@@ -1,8 +1,0 @@
-db.username=YOUR_DB_USERNAME
-db.password=YOUR_DB_PASSWORD
-
-mail.username=YOUR_MAIL_USERNAME
-mail.password=YOUR_MAIL_PASSWORD
-
-tmdb.api.key=YOUR_TMDB_API_KEY
-youtube.api.key=YOUR_YOUTUBE_API_KEY

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -198,7 +199,7 @@
               <div class="movie-card">
                 <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                      class="slider-poster"
-                     onerror="this.src='https://via.placeholder.com/185x270?text=No+Image'">
+                     onerror="this.src='https://placehold.co/185x270?text=No+Image'">
                 <div class="movie-info">
                   <div class="movie-title">${movie.title}</div>
                   <div class="movie-rating">평균 ★ ${movie.voteAverage}</div>
@@ -232,7 +233,7 @@
 	            <div class="movie-card">
 	              <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
 	                   class="slider-poster"
-	                   onerror="this.src='https://via.placeholder.com/185x270?text=No+Image'">
+	                   onerror="this.src='https://placehold.co/185x270?text=No+Image'">
 	              <div class="movie-info">
 	                <div class="movie-title">${movie.title}</div>
 	                <div class="movie-rating" style="color:#60a5fa;">
@@ -268,7 +269,7 @@
               <div class="movie-card">
                 <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                      class="slider-poster"
-                     onerror="this.src='https://via.placeholder.com/185x270?text=No+Image'">
+                     onerror="this.src='https://placehold.co/185x270?text=No+Image'">
                 <div class="movie-info">
                   <div class="movie-title">${movie.title}</div>
                   <div class="movie-rating">평균 ★ ${movie.voteAverage}</div>
@@ -301,7 +302,7 @@
               <div class="movie-card">
                 <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                      class="slider-poster"
-                     onerror="this.src='https://via.placeholder.com/185x270?text=No+Image'">
+                     onerror="this.src='https://placehold.co/185x270?text=No+Image'">
                 <div class="movie-info">
                   <div class="movie-title">${movie.title}</div>
                   <div class="movie-rating">평균 ★ ${movie.voteAverage}</div>
@@ -327,9 +328,12 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
       <c:forEach var="kw" items="${popularKeywords}" varStatus="st">
-        <a href="${ctp}/movie/search?q=${kw.keyword}" class="keyword-chip">
+        <c:url var="keywordSearchUrl" value="/movie/search">
+          <c:param name="q" value="${kw.keyword}"/>
+        </c:url>
+        <a href="${keywordSearchUrl}" class="keyword-chip">
           <span class="keyword-rank">${st.index + 1}</span>
-          ${kw.keyword}
+          ${fn:escapeXml(kw.keyword)}
           <span style="font-size:11px;color:#aaa;">${kw.searchCnt}회</span>
         </a>
       </c:forEach>
@@ -353,7 +357,7 @@
               <span class="rank-num">${status.index + 1}</span>
               <img src="https://image.tmdb.org/t/p/w200${movie.posterPath}"
                    class="rank-poster"
-                   onerror="this.src='https://via.placeholder.com/58x84?text=No'">
+                   onerror="this.src='https://placehold.co/58x84?text=No'">
               <div class="overflow-hidden">
                 <div class="rank-title">${movie.title}</div>
                 <div class="rank-rating">평균 ★ ${movie.voteAverage}</div>

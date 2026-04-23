@@ -69,7 +69,7 @@
             <div class="movie-rank">${st.index + 1}</div>
             <img src="https://image.tmdb.org/t/p/w300${movie.posterPath}"
                  alt="${movie.title}"
-                 onerror="this.src='https://via.placeholder.com/160x240?text=No+Image'">
+                 onerror="this.src='https://placehold.co/160x240?text=No+Image'">
             <div class="movie-info">
               <div class="movie-title">${movie.title}</div>
               <div class="movie-meta">

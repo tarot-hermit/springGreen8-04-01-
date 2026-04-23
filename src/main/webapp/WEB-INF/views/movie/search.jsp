@@ -1,4 +1,4 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
@@ -53,7 +53,7 @@
           <label class="form-label small text-secondary mb-2">검색어</label>
           <input type="text" class="form-control form-control-lg bg-secondary text-white border-0"
                  name="q" id="searchInput" value="${q}"
-                 placeholder="영화, 드라마, 애니메이션 제목을 입력하세요.." required>
+                 placeholder="영화, 드라마, 애니메이션 제목 또는 키워드를 입력하세요.." required>
         </div>
         <div class="col-6 col-md-3 col-lg-2">
           <label class="form-label small text-secondary mb-2">유형</label>
@@ -86,8 +86,11 @@
       </div>
       <div class="d-flex flex-wrap gap-2" id="historyArea">
         <c:forEach var="h" items="${historyList}">
+          <c:url var="historySearchUrl" value="/movie/search">
+            <c:param name="q" value="${h.keyword}"/>
+          </c:url>
           <div class="d-flex align-items-center bg-secondary rounded px-3 py-1" id="history-${h.searchNo}">
-            <a href="${ctp}/movie/search?q=${h.keyword}" class="text-white text-decoration-none small me-2">${h.keyword}</a>
+            <a href="${historySearchUrl}" class="text-white text-decoration-none small me-2">${h.keyword}</a>
             <span class="text-secondary" style="cursor:pointer;font-size:12px;" onclick="deleteSearch(${h.searchNo})">×</span>
           </div>
         </c:forEach>
@@ -102,7 +105,10 @@
       </div>
       <div class="popular-kw-wrap">
         <c:forEach var="kw" items="${popularKeywords}" varStatus="st">
-          <a href="${ctp}/movie/search?q=${kw.keyword}" class="kw-chip">
+          <c:url var="popularKeywordUrl" value="/movie/search">
+            <c:param name="q" value="${kw.keyword}"/>
+          </c:url>
+          <a href="${popularKeywordUrl}" class="kw-chip">
             <span class="kw-rank">${st.index + 1}</span>
             ${kw.keyword}
           </a>
@@ -126,7 +132,7 @@
                      onclick="location.href='${ctp}/movie/${item.mediaType == 'tv' ? 'tv/' : 'detail/'}${item.tmdbId}'">
                   <img src="https://image.tmdb.org/t/p/w500${item.posterPath}"
                        class="movie-poster mb-2"
-                       onerror="this.src='https://via.placeholder.com/200x260?text=No+Image'">
+                       onerror="this.src='https://placehold.co/200x260?text=No+Image'">
                   <div>
                     <span class="type-badge">${item.mediaType == 'tv' ? 'TV' : 'MOVIE'}</span>
                     <c:if test="${item.animation}">
@@ -146,11 +152,23 @@
           </div>
           <div class="d-flex justify-content-center gap-2 mt-4">
             <c:if test="${page > 1}">
-              <a href="${ctp}/movie/search?q=${q}&page=${page-1}&mediaType=${mediaType}&country=${country}" class="btn btn-outline-secondary">이전</a>
+              <c:url var="prevPageUrl" value="/movie/search">
+                <c:param name="q" value="${q}"/>
+                <c:param name="page" value="${page - 1}"/>
+                <c:param name="mediaType" value="${mediaType}"/>
+                <c:param name="country" value="${country}"/>
+              </c:url>
+              <a href="${prevPageUrl}" class="btn btn-outline-secondary">이전</a>
             </c:if>
             <span class="btn btn-success disabled">${page} 페이지</span>
             <c:if test="${searchResult.hasNextPage}">
-              <a href="${ctp}/movie/search?q=${q}&page=${page+1}&mediaType=${mediaType}&country=${country}" class="btn btn-outline-secondary">다음</a>
+              <c:url var="nextPageUrl" value="/movie/search">
+                <c:param name="q" value="${q}"/>
+                <c:param name="page" value="${page + 1}"/>
+                <c:param name="mediaType" value="${mediaType}"/>
+                <c:param name="country" value="${country}"/>
+              </c:url>
+              <a href="${nextPageUrl}" class="btn btn-outline-secondary">다음</a>
             </c:if>
           </div>
         </c:when>

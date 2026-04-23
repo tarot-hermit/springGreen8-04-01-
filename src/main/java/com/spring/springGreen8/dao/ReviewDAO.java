@@ -30,6 +30,10 @@ public interface ReviewDAO {
 	int checkLike(ReviewVO vo);
 	// 공감 수 업데이트
 	int updateLikeCnt(ReviewVO vo);
+	int deleteLikesByUserNo(int userNo);
+	int reassignReviewsToUser(@Param("fromUserNo") int fromUserNo,
+	                         @Param("toUserNo") int toUserNo);
+	int refreshAllLikeCounts();
 	// 리뷰 단건 조회 추가
 	ReviewVO selectReviewByNo(int reviewNo);
 	
@@ -38,8 +42,7 @@ public interface ReviewDAO {
     List<Map<String, Object>> getRatingStats(int movieNo);
 
     // 정렬 옵션이 있는 리뷰 목록
-    // sort: "latest"(최신) | "rating_high"(별점높은순) | "rating_low"(별점낮은순) | "like"(공감순)
+    // sort: "latest"(최신) | "rating_high"(별점높은순) | "rating_low"(별점낮은순) | "likes"(공감순)
     List<ReviewVO> selectReviewsSorted(@Param("movieNo") int movieNo,
-                                       @Param("sort")    String sort);
-
+                                       @Param("sort") String sort);
 }

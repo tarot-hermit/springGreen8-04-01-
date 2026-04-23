@@ -1,4 +1,4 @@
-﻿package com.spring.springGreen8.controller;
+package com.spring.springGreen8.controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,35 +45,53 @@ public class MovieController {
     @RequestMapping("/list")
     public String list(@RequestParam(defaultValue = "1") int page,
                        @RequestParam(defaultValue = "ALL") String country,
+                       @RequestParam(defaultValue = "popular") String tab,
                        Model model) {
         model.addAttribute("popularList", tmdbService.getPopularMovies(page, country));
         model.addAttribute("nowPlayingList", tmdbService.getNowPlayingMovies(page, country));
         model.addAttribute("topRatedList", tmdbService.getTopRatedMovies(page, country));
         model.addAttribute("page", page);
         model.addAttribute("country", country);
+        model.addAttribute("activeTab", resolveMovieTab(tab));
         return "movie/list";
+    }
+
+    private String resolveMovieTab(String tab) {
+        if ("nowplaying".equalsIgnoreCase(tab)) return "nowplaying";
+        if ("toprated".equalsIgnoreCase(tab)) return "toprated";
+        return "popular";
     }
 
     @RequestMapping("/tv")
     public String tvList(@RequestParam(defaultValue = "1") int page,
                          @RequestParam(defaultValue = "ALL") String country,
+                         @RequestParam(defaultValue = "popular") String tab,
                          Model model) {
         model.addAttribute("popularList", tmdbService.getPopularTvShows(page, country));
         model.addAttribute("onTheAirList", tmdbService.getOnTheAirTvShows(page, country));
         model.addAttribute("topRatedList", tmdbService.getTopRatedTvShows(page, country));
         model.addAttribute("page", page);
         model.addAttribute("country", country);
+        model.addAttribute("activeTab", resolveTvTab(tab));
         return "movie/tvList";
+    }
+
+    private String resolveTvTab(String tab) {
+        if ("onair".equalsIgnoreCase(tab)) return "onair";
+        if ("toprated".equalsIgnoreCase(tab)) return "toprated";
+        return "popular";
     }
 
     @RequestMapping("/animation")
     public String animationList(@RequestParam(defaultValue = "1") int page,
                                 @RequestParam(defaultValue = "ALL") String country,
+                                @RequestParam(defaultValue = "movie") String tab,
                                 Model model) {
         model.addAttribute("movieList", tmdbService.getAnimationMovies(page, country));
         model.addAttribute("tvList", tmdbService.getAnimationTvShows(page, country));
         model.addAttribute("page", page);
         model.addAttribute("country", country);
+        model.addAttribute("activeTab", "tv".equalsIgnoreCase(tab) ? "tv" : "movie");
         return "movie/animationList";
     }
 
@@ -102,7 +120,8 @@ public class MovieController {
         model.addAttribute("movie", tmdbService.getMovieDetail(tmdbId));
         model.addAttribute("cast", tmdbService.getCastList(tmdbId));
         model.addAttribute("crew", tmdbService.getCrewList(tmdbId));
-        model.addAttribute("videos", tmdbService.getVideoList(tmdbId));
+        model.addAttribute("videos", tmdbService.getMovieVideos(tmdbId));
+        model.addAttribute("keywords", tmdbService.getMovieKeywords(tmdbId));
         model.addAttribute("watchProviders", tmdbService.getMovieWatchProviders(tmdbId, "KR"));
 
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
@@ -129,6 +148,7 @@ public class MovieController {
                            Model model) {
         MediaContentVO tv = tmdbService.getTvDetail(tmdbId);
         model.addAttribute("tv", tv);
+        model.addAttribute("keywords", tmdbService.getTvKeywords(tmdbId));
         model.addAttribute("cast", tmdbService.getTvCastList(tmdbId));
         model.addAttribute("crew", tmdbService.getTvCrewList(tmdbId));
         model.addAttribute("watchProviders", tmdbService.getTvWatchProviders(tmdbId, "KR"));
@@ -191,13 +211,15 @@ public class MovieController {
                          @RequestParam(defaultValue = "all") String mediaType,
                          @RequestParam(defaultValue = "ALL") String country,
                          HttpSession session, Model model) {
+        q = q == null ? "" : q.trim();
         MediaSearchResultVO searchResult = new MediaSearchResultVO();
         List<MediaContentVO> searchList = new ArrayList<>();
         if (!q.isEmpty()) {
             searchResult = tmdbService.searchContents(q, page, mediaType, country);
             searchList = searchResult.getContents();
             UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-            if (loginUser != null) {
+            if (loginUser != null && page <= 1) {
+                searchHistoryDAO.deleteSearchByKeyword(loginUser.getUserNo(), q);
                 SearchHistoryVO history = new SearchHistoryVO();
                 history.setUserNo(loginUser.getUserNo());
                 history.setKeyword(q);
@@ -215,7 +237,6 @@ public class MovieController {
         model.addAttribute("page", page);
         model.addAttribute("mediaType", mediaType);
         model.addAttribute("country", country);
-        model.addAttribute("popularKeywords", searchHistoryDAO.selectPopularKeywords());
         return "movie/search";
     }
 
