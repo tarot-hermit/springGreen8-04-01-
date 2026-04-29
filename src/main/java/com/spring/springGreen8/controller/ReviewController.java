@@ -41,6 +41,13 @@ public class ReviewController {
         }
 
         vo.setUserNo(loginUser.getUserNo());
+        MovieVO movie = movieDAO.selectMovieByTmdbId(vo.getMovieNo());
+        if (movie != null) {
+            ReviewVO myReview = new ReviewVO();
+            myReview.setMovieNo(movie.getMovieNo());
+            myReview.setUserNo(loginUser.getUserNo());
+            if (reviewService.getMyReview(myReview) != null) return "dup";
+        }
         int result = reviewService.writeReview(vo);
         return result > 0 ? "ok" : "fail";
     }
@@ -117,6 +124,7 @@ public class ReviewController {
                                      @RequestParam(defaultValue = "latest") String sort) {
         MovieVO movie = movieDAO.selectMovieByTmdbId(movieNo);
         if (movie == null) return new ArrayList<>();
+        if ("like".equals(sort)) sort = "likes";
         return reviewService.getReviewsSorted(movie.getMovieNo(), sort);
     }
 

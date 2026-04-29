@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -67,13 +68,14 @@
   <div class="login-wrap">
     <div class="login-card">
       <div class="login-top">
-        <div class="login-badge">WATCHA PEDIA STYLE</div>
+        <div class="login-badge">SpringGreen8</div>
         <h3 class="login-title">로그인</h3>
         <p class="login-sub">취향에 맞는 영화와 리뷰를 만나보세요</p>
       </div>
 
       <div class="login-body">
         <form id="loginForm" action="${ctp}/user/login" method="post">
+          <input type="hidden" name="redirect" value="${fn:escapeXml(redirect)}">
           <div class="mb-3">
             <label class="form-label">아이디</label>
             <input type="text" class="form-control watcha-input"

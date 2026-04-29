@@ -22,9 +22,38 @@
   </c:if>
   <c:set var="backListLabel" value="전체 목록"/>
 </c:if>
+<c:if test="${param.from == 'home'}">
+  <c:set var="backListUrl" value="${ctp}/"/>
+  <c:set var="backListLabel" value="홈"/>
+</c:if>
+<c:if test="${param.from == 'trending'}">
+  <c:url var="backListUrl" value="/movie/trending">
+    <c:param name="timeWindow" value="${empty param.timeWindow ? 'week' : param.timeWindow}"/>
+  </c:url>
+  <c:set var="backListLabel" value="트렌딩"/>
+</c:if>
+<c:if test="${param.from == 'upcoming'}">
+  <c:set var="backListUrl" value="${ctp}/movie/upcoming"/>
+  <c:set var="backListLabel" value="개봉 예정"/>
+</c:if>
+<c:if test="${param.from == 'search'}">
+  <c:url var="backListUrl" value="/movie/search">
+    <c:param name="q" value="${param.q}"/>
+    <c:param name="page" value="${empty param.page ? 1 : param.page}"/>
+    <c:param name="mediaType" value="${empty param.mediaType ? 'all' : param.mediaType}"/>
+    <c:param name="country" value="${empty param.country ? 'ALL' : param.country}"/>
+  </c:url>
+  <c:set var="backListLabel" value="검색 결과"/>
+</c:if>
 <c:if test="${param.from == 'genre' and not empty param.genreId}">
   <c:set var="backListUrl" value="${ctp}/movie/genre?genreId=${param.genreId}&genreName=${param.genreName}&page=${empty param.page ? 1 : param.page}"/>
   <c:set var="backListLabel" value="장르 목록"/>
+</c:if>
+<c:if test="${param.from != 'genre' and param.from != 'search' and not empty param.page}">
+  <c:set var="backListUrl" value="${backListUrl}${fn:contains(backListUrl, '?') ? '&' : '?'}page=${param.page}"/>
+</c:if>
+<c:if test="${param.from != 'genre' and param.from != 'search' and not empty param.tab}">
+  <c:set var="backListUrl" value="${backListUrl}${fn:contains(backListUrl, '?') ? '&' : '?'}tab=${param.tab}"/>
 </c:if>
 <c:set var="detailSearchMediaType" value="${movie.animation or param.from == 'animation' ? 'animation' : 'movie'}"/>
 <!DOCTYPE html>
@@ -1027,7 +1056,7 @@
 		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">평점 높은순</button>
 		      <button class="btn btn-sm sort-btn" onclick="sortReviews('rating_low', this)"
 		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">평점 낮은순</button>
-		      <button class="btn btn-sm sort-btn" onclick="sortReviews('like', this)"
+		      <button class="btn btn-sm sort-btn" onclick="sortReviews('likes', this)"
 		              style="border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);">공감순</button>
 		    </div>
 		  </div>
@@ -1150,6 +1179,18 @@ var ctp = '${ctp}';
 var loginUserNo = ${not empty sessionScope.loginUser ? sessionScope.loginUser.userNo : 0};
 var isAdmin = ${not empty sessionScope.loginUser and sessionScope.loginUser.userRole eq 'ADMIN'};
 var currentSort = 'latest';
+
+function currentReturnUrl() {
+    var path = window.location.pathname;
+    if (ctp && path.indexOf(ctp) === 0) {
+        path = path.substring(ctp.length) || '/';
+    }
+    return path + window.location.search + window.location.hash;
+}
+
+function goLogin() {
+    location.href = ctp + '/user/login?redirect=' + encodeURIComponent(currentReturnUrl());
+}
 
 function escapeHtml(value) {
     return $('<div>').text(value == null ? '' : String(value)).html();
@@ -1304,7 +1345,7 @@ function submitReview() {
                 Swal.fire({ icon: 'warning', title: '내용 길이 오류', text: '리뷰 내용은 10자 이상 2000자 이하로 작성해주세요.' });
             } else if (res == 'login') {
                 Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-                    .then(() => location.href = ctp + '/user/login');
+                    .then(() => goLogin());
             } else {
                 Swal.fire({ icon: 'error', title: '등록 실패', text: '리뷰 등록에 실패했습니다.' });
             }
@@ -1322,6 +1363,14 @@ function updateReview(reviewNo) {
         Swal.fire({ icon: 'warning', title: '내용 필요', text: '리뷰 내용을 입력해주세요.' });
         return;
     }
+    if (content.trim().length < 10) {
+        Swal.fire({ icon: 'warning', title: '내용 부족', text: '리뷰 내용은 10자 이상 입력해주세요.' });
+        return;
+    }
+    if (content.trim().length > 2000) {
+        Swal.fire({ icon: 'warning', title: '내용 초과', text: '리뷰 내용은 2000자 이하로 작성해주세요.' });
+        return;
+    }
 
     $.ajax({
         url: ctp + '/review/update', type: 'POST',
@@ -1332,6 +1381,11 @@ function updateReview(reviewNo) {
                     .then(() => location.reload());
             } else if (res == 'auth') {
                 Swal.fire({ icon: 'error', title: '권한 없음', text: '수정 권한이 없습니다.' });
+            } else if (res == 'length') {
+                Swal.fire({ icon: 'warning', title: '내용 길이 오류', text: '리뷰 내용은 10자 이상 2000자 이하로 작성해주세요.' });
+            } else if (res == 'login') {
+                Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
+                    .then(() => goLogin());
             } else {
                 Swal.fire({ icon: 'error', title: '수정 실패', text: '수정에 실패했습니다.' });
             }
@@ -1375,14 +1429,49 @@ function loadReviews() {
     });
 }
 
+function sortReviews(sort, btn) {
+    currentSort = sort;
+    $('.sort-btn').removeClass('active')
+        .css({
+            background: 'rgba(255,255,255,0.08)',
+            color: '#aaa',
+            border: '1px solid rgba(255,255,255,0.15)'
+        });
+    $(btn).addClass('active')
+        .css({
+            background: '#28a745',
+            color: '#fff',
+            border: 'none'
+        });
+
+    $.ajax({
+        url: ctp + '/review/list/sorted',
+        type: 'GET',
+        data: { movieNo: tmdbId, sort: sort },
+        success: function(list) {
+            renderReviews(list);
+        },
+        error: function() {
+            Swal.fire({ icon: 'error', title: '정렬 실패', text: '리뷰 목록을 다시 불러오지 못했습니다.' });
+        }
+    });
+}
+
 /* 리뷰 렌더링 */
 function renderReviews(list) {
     var blindReviewMessage = '\uC2E0\uACE0\uB85C \uC778\uD574 \uBE14\uB77C\uC778\uB4DC \uCC98\uB9AC\uB41C \uB9AC\uBDF0\uC785\uB2C8\uB2E4.';
     var html = '';
-    if (list.length == 0) {
-        html = '<div class="empty-card"><p class="text-secondary mb-0">아직 작성된 리뷰가 없습니다.</p></div>';
+    var visibleList = (list || []).filter(function(r) {
+        return loginUserNo == 0 || r.userNo != loginUserNo;
+    });
+    var reviewNos = [];
+
+    if (visibleList.length == 0) {
+        var emptyText = loginUserNo != 0 ? '다른 사용자가 남긴 리뷰가 아직 없습니다.' : '아직 작성된 리뷰가 없습니다.';
+        html = '<div class="empty-card"><p class="text-secondary mb-0">' + emptyText + '</p></div>';
     } else {
-        list.forEach(function(r) {
+        visibleList.forEach(function(r) {
+            reviewNos.push(r.reviewNo);
             var stars = '';
             for (var i = 1; i <= 5; i++) {
                 stars += i <= r.rating ? '<span class="text-warning">★</span>' : '<span class="text-secondary">☆</span>';
@@ -1429,10 +1518,12 @@ function renderReviews(list) {
                 html += '<button class="btn btn-outline-success btn-sm" onclick="writeComment(' + r.reviewNo + ')">등록</button></div>';
             }
             html += '</div></div>';
-            loadComments(r.reviewNo);
         });
     }
     $('#reviewList').html(html);
+    reviewNos.forEach(function(reviewNo) {
+        loadComments(reviewNo);
+    });
 }
 
 /* 댓글 목록 로드 */
@@ -1529,7 +1620,7 @@ function writeComment(reviewNo) {
                 loadComments(reviewNo);
             } else if (res == 'login') {
                 Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-                    .then(() => location.href = ctp + '/user/login');
+                    .then(() => goLogin());
             } else {
                 Swal.fire({ icon: 'error', title: '등록 실패', text: '댓글 등록에 실패했습니다.' });
             }
@@ -1553,7 +1644,7 @@ function writeReply(parentCommentNo, reviewNo) {
                 loadComments(reviewNo);
             } else if (res == 'login') {
                 Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-                    .then(() => location.href = ctp + '/user/login');
+                    .then(() => goLogin());
             } else {
                 Swal.fire({ icon: 'error', title: '등록 실패', text: '답글 등록에 실패했습니다.' });
             }
@@ -1622,7 +1713,7 @@ function toggleWatchlist() {
                               .html('<i class="fa fa-heart"></i> 보고싶어요');
             } else if (res == 'login') {
                 Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-                    .then(() => location.href = ctp + '/user/login');
+                    .then(() => goLogin());
             }
         }
     });
@@ -1646,14 +1737,17 @@ function toggleLike(reviewNo, btn) {
                     $(btn).removeClass('btn-warning').addClass('btn-outline-secondary');
                 } else if (res == 'login') {
                     Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-                        .then(() => location.href = ctp + '/user/login');
+                        .then(() => goLogin());
+                }
+                if ((res == 'ok' || res == 'cancel') && currentSort === 'likes') {
+                    sortReviews(currentSort, $('.sort-btn.active')[0]);
                 }
             }
         });
         </c:when>
         <c:otherwise>
         Swal.fire({ icon: 'info', title: '로그인 필요', text: '로그인이 필요합니다.' })
-            .then(() => location.href = ctp + '/user/login');
+            .then(() => goLogin());
         </c:otherwise>
     </c:choose>
 }
@@ -1722,4 +1816,43 @@ function renderCollectionModal(list) {
         html += '<span>' + escapeHtml(c.title) + '</span>';
         html += '<div class="d-flex align-items-center gap-2">';
         html += '<span class="col-action badge text-bg-warning">' + actionText + '</span>';
-        html += '<span class="col-check">' + checkText + '</span>'
+        html += '<span class="col-check">' + checkText + '</span>';
+        html += '</div></div>';
+        html += '<small class="d-block text-secondary mt-1">' + (c.movieCount || 0) + '개 작품</small>';
+        html += '</button>';
+    });
+    html += '</div>';
+    $('#collectionModalBody').html(html);
+}
+
+function updateCollectionItemState(btn, selected) {
+    var $btn = $(btn);
+    $btn.attr('data-in-collection', selected ? 'true' : 'false')
+        .toggleClass('active border-warning', selected);
+    $btn.find('.col-action').text(selected ? '컬렉션 삭제' : '컬렉션 추가');
+    $btn.find('.col-check').text(selected ? '✓' : '');
+}
+
+function hasAnyCollectionSelection(list) {
+    if (!list || list.length === 0) return false;
+    return list.some(function(c) {
+        return c.inCollection == 1 || c.inCollection === true;
+    });
+}
+
+function syncCollectionButtonStateFromModal() {
+    var hasSelected = $('#collectionModalBody .collection-item[data-in-collection="true"]').length > 0;
+    updateCollectionButtonState(hasSelected);
+}
+
+function updateCollectionButtonState(hasSelected) {
+    var $btn = $('#collectionBtn');
+    if (!$btn.length) return;
+
+    $btn.toggleClass('btn-warning', hasSelected)
+        .toggleClass('btn-outline-warning', !hasSelected);
+    $('#collectionBtnText').text(hasSelected ? '컬렉션에 담김' : '컬렉션에 추가');
+}
+</script>
+</body>
+</html>

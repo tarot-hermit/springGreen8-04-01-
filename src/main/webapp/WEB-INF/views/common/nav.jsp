@@ -107,7 +107,7 @@
         <input type="hidden" name="mediaType" id="navMediaTypeInput" value="${navMediaType}">
         <div class="input-group">
           <input type="text" class="form-control bg-secondary text-white border-0"
-                 name="q" id="navSearch" placeholder="콘텐츠 검색.."
+                 name="q" id="navSearch" placeholder="콘텐츠 검색"
                  autocomplete="off" value="${fn:escapeXml(param.q)}">
           <button type="submit" class="btn btn-success">
             <i class="fa fa-search"></i>

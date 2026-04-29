@@ -43,6 +43,7 @@
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <div class="container py-5">
   <div class="search-box p-4 mb-4">
@@ -53,7 +54,7 @@
           <label class="form-label small text-secondary mb-2">검색어</label>
           <input type="text" class="form-control form-control-lg bg-secondary text-white border-0"
                  name="q" id="searchInput" value="${q}"
-                 placeholder="영화, 드라마, 애니메이션 제목 또는 키워드를 입력하세요.." required>
+                 placeholder="영화, 드라마, 애니메이션 제목 또는 키워드를 입력하세요" required>
         </div>
         <div class="col-6 col-md-3 col-lg-2">
           <label class="form-label small text-secondary mb-2">유형</label>
@@ -128,8 +129,41 @@
           <div class="row g-3 mb-5">
             <c:forEach var="item" items="${searchList}">
               <div class="col-6 col-md-3 col-xl-2">
-                <div class="movie-card"
-                     onclick="location.href='${ctp}/movie/${item.mediaType == 'tv' ? 'tv/' : 'detail/'}${item.tmdbId}'">
+                <c:choose>
+                  <c:when test="${item.mediaType == 'tv'}">
+                    <c:url var="searchDetailUrl" value="/movie/tv/${item.tmdbId}">
+                      <c:param name="from" value="search"/>
+                      <c:param name="q" value="${q}"/>
+                      <c:param name="page" value="${page}"/>
+                      <c:param name="mediaType" value="${mediaType}"/>
+                      <c:param name="country" value="${country}"/>
+                    </c:url>
+                  </c:when>
+                  <c:otherwise>
+                    <c:url var="searchDetailUrl" value="/movie/detail/${item.tmdbId}">
+                      <c:param name="from" value="search"/>
+                      <c:param name="q" value="${q}"/>
+                      <c:param name="page" value="${page}"/>
+                      <c:param name="mediaType" value="${mediaType}"/>
+                      <c:param name="country" value="${country}"/>
+                    </c:url>
+                  </c:otherwise>
+                </c:choose>
+                <div class="movie-card sg-card"
+                     onclick="sgOpenDetail('${searchDetailUrl}')">
+                  <c:if test="${item.mediaType != 'tv'}">
+                    <div class="sg-quick-actions">
+                      <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${item.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                        <i class="fa fa-heart"></i>
+                      </button>
+                      <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${item.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                        <i class="fa fa-check"></i>
+                      </button>
+                      <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${item.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                        <i class="fa fa-folder-plus"></i>
+                      </button>
+                    </div>
+                  </c:if>
                   <img src="https://image.tmdb.org/t/p/w500${item.posterPath}"
                        class="movie-poster mb-2"
                        onerror="this.src='https://placehold.co/200x260?text=No+Image'">

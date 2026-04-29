@@ -171,12 +171,13 @@ public class UserController {
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
-    public String loginForm() {
+    public String loginForm(String redirect, Model model) {
+        model.addAttribute("redirect", sanitizeRedirect(redirect));
         return "user/login";
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public String loginProc(String userId, String userPw, HttpServletRequest request,
+    public String loginProc(String userId, String userPw, String redirect, HttpServletRequest request,
                             Model model, RedirectAttributes ra) {
         userId = InputValidator.trimToEmpty(userId);
         String clientIp = resolveClientIp(request);
@@ -212,7 +213,20 @@ public class UserController {
 
         startLoginSession(request, user);
 
+        String safeRedirect = sanitizeRedirect(redirect);
+        if (!safeRedirect.isEmpty()) {
+            return "redirect:" + safeRedirect;
+        }
         return "redirect:/";
+    }
+
+    private String sanitizeRedirect(String redirect) {
+        redirect = InputValidator.trimToEmpty(redirect);
+        if (redirect.isEmpty()) return "";
+        if (!redirect.startsWith("/") || redirect.startsWith("//")) return "";
+        if (redirect.matches("(?i)^[a-z][a-z0-9+.-]*:.*")) return "";
+        if (redirect.startsWith("/user/login") || redirect.startsWith("/user/logout")) return "";
+        return redirect;
     }
 
     @RequestMapping(value = "/kakao/login", method = RequestMethod.GET)

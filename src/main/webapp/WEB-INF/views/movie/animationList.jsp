@@ -31,6 +31,7 @@
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <div class="container py-4">
   <div class="filter-box mb-4">
@@ -54,7 +55,18 @@
     <div class="row g-3">
       <c:forEach var="item" items="${movieList}">
         <div class="col-6 col-md-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/detail/${item.tmdbId}?from=animation&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/detail/${item.tmdbId}?from=animation&country=${country}&page=${page}&tab=movie')">
+            <div class="sg-quick-actions">
+              <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${item.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                <i class="fa fa-heart"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${item.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                <i class="fa fa-check"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${item.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                <i class="fa fa-folder-plus"></i>
+              </button>
+            </div>
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge">MOVIE</span>
@@ -72,7 +84,7 @@
     <div class="row g-3">
       <c:forEach var="item" items="${tvList}">
         <div class="col-6 col-md-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=animation&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/tv/${item.tmdbId}?from=animation&country=${country}&page=${page}&tab=tv')">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge">TV</span>
@@ -117,6 +129,9 @@ function switchTab(btn, tabName) {
     document.getElementById('tab-' + tabName).style.display = 'block';
     document.getElementById('tabInput').value = tabName;
     updatePaginationLinks(tabName);
+    if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', '${ctp}/movie/animation?page=${page}&country=' + encodeURIComponent('${country}') + '&tab=' + tabName);
+    }
     btn.classList.add('active');
 }
 </script>

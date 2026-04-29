@@ -44,6 +44,7 @@
 </head>
 <body>
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <div class="page-wrap">
   <div class="page-header">
@@ -64,8 +65,19 @@
     <c:when test="${not empty movies}">
       <div class="movie-grid">
         <c:forEach var="movie" items="${movies}" varStatus="st">
-          <div class="movie-card"
-               onclick="location.href='${ctp}/movie/detail/${movie.tmdbId}'">
+          <div class="movie-card sg-card"
+               onclick="sgOpenDetail('${ctp}/movie/detail/${movie.tmdbId}?from=trending&timeWindow=${timeWindow}')">
+            <div class="sg-quick-actions">
+              <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${movie.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                <i class="fa fa-heart"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${movie.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                <i class="fa fa-check"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${movie.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                <i class="fa fa-folder-plus"></i>
+              </button>
+            </div>
             <div class="movie-rank">${st.index + 1}</div>
             <img src="https://image.tmdb.org/t/p/w300${movie.posterPath}"
                  alt="${movie.title}"

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <c:set var="backListUrl" value="${ctp}/movie/tv"/>
@@ -21,9 +22,24 @@
   </c:if>
   <c:set var="backListLabel" value="전체 목록"/>
 </c:if>
+<c:if test="${param.from == 'search'}">
+  <c:url var="backListUrl" value="/movie/search">
+    <c:param name="q" value="${param.q}"/>
+    <c:param name="page" value="${empty param.page ? 1 : param.page}"/>
+    <c:param name="mediaType" value="${empty param.mediaType ? 'all' : param.mediaType}"/>
+    <c:param name="country" value="${empty param.country ? 'ALL' : param.country}"/>
+  </c:url>
+  <c:set var="backListLabel" value="검색 결과"/>
+</c:if>
 <c:if test="${param.from == 'genre' and not empty param.genreId}">
   <c:set var="backListUrl" value="${ctp}/movie/genre?genreId=${param.genreId}&genreName=${param.genreName}&page=${empty param.page ? 1 : param.page}"/>
   <c:set var="backListLabel" value="장르 목록"/>
+</c:if>
+<c:if test="${param.from != 'genre' and param.from != 'search' and not empty param.page}">
+  <c:set var="backListUrl" value="${backListUrl}${fn:contains(backListUrl, '?') ? '&' : '?'}page=${param.page}"/>
+</c:if>
+<c:if test="${param.from != 'genre' and param.from != 'search' and not empty param.tab}">
+  <c:set var="backListUrl" value="${backListUrl}${fn:contains(backListUrl, '?') ? '&' : '?'}tab=${param.tab}"/>
 </c:if>
 <c:set var="detailSearchMediaType" value="${tv.animation ? 'animation' : 'tv'}"/>
 <!DOCTYPE html>

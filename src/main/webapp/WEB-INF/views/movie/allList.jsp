@@ -58,6 +58,7 @@
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <div class="container py-4">
   <div class="filter-box mb-4">
@@ -75,7 +76,18 @@
     <div class="row g-3">
       <c:forEach var="item" items="${movieList}">
         <div class="col-6 col-md-3 col-lg-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/detail/${item.tmdbId}?from=all&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/detail/${item.tmdbId}?from=all&country=${country}&page=${page}')">
+            <div class="sg-quick-actions">
+              <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${item.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                <i class="fa fa-heart"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${item.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                <i class="fa fa-check"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${item.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                <i class="fa fa-folder-plus"></i>
+              </button>
+            </div>
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-movie">MOVIE</span>
@@ -93,7 +105,7 @@
     <div class="row g-3">
       <c:forEach var="item" items="${tvList}">
         <div class="col-6 col-md-3 col-lg-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=all&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/tv/${item.tmdbId}?from=all&country=${country}&page=${page}')">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-tv">TV</span>
@@ -111,7 +123,18 @@
     <div class="row g-3">
       <c:forEach var="item" items="${animationMovieList}">
         <div class="col-6 col-md-3 col-lg-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/detail/${item.tmdbId}?from=all&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/detail/${item.tmdbId}?from=all&country=${country}&page=${page}')">
+            <div class="sg-quick-actions">
+              <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${item.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                <i class="fa fa-heart"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${item.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                <i class="fa fa-check"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${item.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                <i class="fa fa-folder-plus"></i>
+              </button>
+            </div>
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-animation">ANI MOVIE</span>
@@ -129,7 +152,7 @@
     <div class="row g-3">
       <c:forEach var="item" items="${animationTvList}">
         <div class="col-6 col-md-3 col-lg-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=all&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/tv/${item.tmdbId}?from=all&country=${country}&page=${page}')">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <span class="type-badge badge-animation">ANI TV</span>

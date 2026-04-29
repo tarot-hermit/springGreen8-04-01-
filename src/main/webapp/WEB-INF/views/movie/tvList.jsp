@@ -20,6 +20,7 @@
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <div class="container py-4">
   <div class="filter-box mb-4">
@@ -44,7 +45,7 @@
     <div class="row g-3">
       <c:forEach var="item" items="${popularList}">
         <div class="col-6 col-md-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=tv&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/tv/${item.tmdbId}?from=tv&country=${country}&page=${page}&tab=popular')">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
@@ -61,7 +62,7 @@
     <div class="row g-3">
       <c:forEach var="item" items="${onTheAirList}">
         <div class="col-6 col-md-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=tv&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/tv/${item.tmdbId}?from=tv&country=${country}&page=${page}&tab=onair')">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
@@ -78,7 +79,7 @@
     <div class="row g-3">
       <c:forEach var="item" items="${topRatedList}">
         <div class="col-6 col-md-2">
-          <div class="content-card" onclick="location.href='${ctp}/movie/tv/${item.tmdbId}?from=tv&country=${country}'">
+          <div class="content-card sg-card" onclick="sgOpenDetail('${ctp}/movie/tv/${item.tmdbId}?from=tv&country=${country}&page=${page}&tab=toprated')">
             <img src="https://image.tmdb.org/t/p/w500${item.posterPath}" class="content-poster mb-2"
                  onerror="this.src='https://placehold.co/200x280?text=No+Image'">
             <p class="mb-0 fw-bold text-truncate small">${item.title}</p>
@@ -123,6 +124,9 @@ function switchTab(btn, tabName) {
     document.getElementById('tab-' + tabName).style.display = 'block';
     document.getElementById('tabInput').value = tabName;
     updatePaginationLinks(tabName);
+    if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', '${ctp}/movie/tv?page=${page}&country=' + encodeURIComponent('${country}') + '&tab=' + tabName);
+    }
     btn.classList.add('active');
 }
 </script>

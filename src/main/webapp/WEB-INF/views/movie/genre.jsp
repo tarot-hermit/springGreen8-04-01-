@@ -286,12 +286,13 @@
 </head>
 <body class="bg-dark text-white">
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <div class="container py-4">
   <div class="hero-box">
     <div class="hero-badge">
       <i class="fa fa-film"></i>
-      <span>Genre Explore</span>
+      <span>장르 탐색</span>
     </div>
     <h1 class="hero-title">
       <c:choose>
@@ -340,7 +341,20 @@
                 <c:if test="${item.mediaType == 'tv'}">
                   <c:set var="detailUrl" value="${ctp}/movie/tv/${item.tmdbId}?from=genre&genreId=${genreId}&genreName=${genreName}&page=${page}"/>
                 </c:if>
-                <div class="content-card" onclick="location.href='${detailUrl}'">
+                <div class="content-card sg-card" onclick="sgOpenDetail('${detailUrl}')">
+                  <c:if test="${item.mediaType != 'tv'}">
+                    <div class="sg-quick-actions">
+                      <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${item.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                        <i class="fa fa-heart"></i>
+                      </button>
+                      <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${item.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                        <i class="fa fa-check"></i>
+                      </button>
+                      <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${item.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                        <i class="fa fa-folder-plus"></i>
+                      </button>
+                    </div>
+                  </c:if>
                   <div class="content-thumb">
                     <img src="https://image.tmdb.org/t/p/w500${item.posterPath}"
                          class="content-poster"

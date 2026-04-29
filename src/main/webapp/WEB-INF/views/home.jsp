@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <c:set var="ctp" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html>
@@ -117,6 +118,7 @@
 </head>
 <body>
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
+<%@ include file="/WEB-INF/views/common/contentQuickActions.jspf" %>
 
 <c:if test="${not empty popularList}">
   <div class="container">
@@ -133,11 +135,11 @@
             </div>
             <p class="hero-overview">${popularList[0].overview}</p>
             <div class="d-flex gap-2 flex-wrap">
-              <a href="${ctp}/movie/detail/${popularList[0].tmdbId}" class="btn btn-watcha btn-watcha-main">
+              <a href="${ctp}/movie/detail/${popularList[0].tmdbId}?from=home" class="btn btn-watcha btn-watcha-main">
                 <i class="fa fa-play me-1"></i> 상세보기
               </a>
               <c:if test="${not empty sessionScope.loginUser}">
-                <a href="${ctp}/movie/detail/${popularList[0].tmdbId}" class="btn btn-watcha btn-watcha-sub">
+                <a href="#" class="btn btn-watcha btn-watcha-sub" data-tmdb-id="${popularList[0].tmdbId}" onclick="sgToggleWatch(event, this)">
                   <i class="fa fa-heart me-1"></i> 보고싶어요
                 </a>
               </c:if>
@@ -195,8 +197,19 @@
       <div class="slider-viewport">
         <div class="movie-slider" id="trending">
           <c:forEach var="movie" items="${trendingList}">
-            <div class="slider-item" onclick="location.href='${ctp}/movie/detail/${movie.tmdbId}'">
-              <div class="movie-card">
+            <div class="slider-item" onclick="sgOpenDetail('${ctp}/movie/detail/${movie.tmdbId}?from=home')">
+              <div class="movie-card sg-card">
+                <div class="sg-quick-actions">
+                  <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${movie.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                    <i class="fa fa-heart"></i>
+                  </button>
+                  <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${movie.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                    <i class="fa fa-check"></i>
+                  </button>
+                  <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${movie.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                    <i class="fa fa-folder-plus"></i>
+                  </button>
+                </div>
                 <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                      class="slider-poster"
                      onerror="this.src='https://placehold.co/185x270?text=No+Image'">
@@ -229,8 +242,19 @@
 	    <div class="slider-viewport">
 	      <div class="movie-slider" id="upcoming">
 	        <c:forEach var="movie" items="${upcomingList}">
-	          <div class="slider-item" onclick="location.href='${ctp}/movie/detail/${movie.tmdbId}'">
-	            <div class="movie-card">
+	          <div class="slider-item" onclick="sgOpenDetail('${ctp}/movie/detail/${movie.tmdbId}?from=home')">
+	            <div class="movie-card sg-card">
+	              <div class="sg-quick-actions">
+	                <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${movie.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+	                  <i class="fa fa-heart"></i>
+	                </button>
+	                <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${movie.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+	                  <i class="fa fa-check"></i>
+	                </button>
+	                <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${movie.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+	                  <i class="fa fa-folder-plus"></i>
+	                </button>
+	              </div>
 	              <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
 	                   class="slider-poster"
 	                   onerror="this.src='https://placehold.co/185x270?text=No+Image'">
@@ -265,8 +289,19 @@
       <div class="slider-viewport">
         <div class="movie-slider" id="popular">
           <c:forEach var="movie" items="${popularList}">
-            <div class="slider-item" onclick="location.href='${ctp}/movie/detail/${movie.tmdbId}'">
-              <div class="movie-card">
+            <div class="slider-item" onclick="sgOpenDetail('${ctp}/movie/detail/${movie.tmdbId}?from=home')">
+              <div class="movie-card sg-card">
+                <div class="sg-quick-actions">
+                  <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${movie.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                    <i class="fa fa-heart"></i>
+                  </button>
+                  <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${movie.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                    <i class="fa fa-check"></i>
+                  </button>
+                  <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${movie.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                    <i class="fa fa-folder-plus"></i>
+                  </button>
+                </div>
                 <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                      class="slider-poster"
                      onerror="this.src='https://placehold.co/185x270?text=No+Image'">
@@ -298,8 +333,19 @@
       <div class="slider-viewport">
         <div class="movie-slider" id="nowplaying">
           <c:forEach var="movie" items="${nowPlayingList}">
-            <div class="slider-item" onclick="location.href='${ctp}/movie/detail/${movie.tmdbId}'">
-              <div class="movie-card">
+            <div class="slider-item" onclick="sgOpenDetail('${ctp}/movie/detail/${movie.tmdbId}?from=home')">
+              <div class="movie-card sg-card">
+                <div class="sg-quick-actions">
+                  <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${movie.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                    <i class="fa fa-heart"></i>
+                  </button>
+                  <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${movie.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                    <i class="fa fa-check"></i>
+                  </button>
+                  <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${movie.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                    <i class="fa fa-folder-plus"></i>
+                  </button>
+                </div>
                 <img src="https://image.tmdb.org/t/p/w500${movie.posterPath}"
                      class="slider-poster"
                      onerror="this.src='https://placehold.co/185x270?text=No+Image'">
@@ -352,7 +398,18 @@
     <div class="row g-3">
       <c:forEach var="movie" items="${popularList}" end="9" varStatus="status">
         <div class="col-12 col-md-6">
-          <div class="top-card" onclick="location.href='${ctp}/movie/detail/${movie.tmdbId}'">
+          <div class="top-card sg-card" onclick="sgOpenDetail('${ctp}/movie/detail/${movie.tmdbId}?from=home')">
+            <div class="sg-quick-actions">
+              <button type="button" class="sg-quick-btn sg-quick-watch" data-tmdb-id="${movie.tmdbId}" title="보고싶어요" onclick="sgToggleWatch(event, this)">
+                <i class="fa fa-heart"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-watched" data-tmdb-id="${movie.tmdbId}" title="봤어요" onclick="sgToggleWatched(event, this)">
+                <i class="fa fa-check"></i>
+              </button>
+              <button type="button" class="sg-quick-btn sg-quick-collection" data-tmdb-id="${movie.tmdbId}" title="컬렉션" onclick="sgOpenCollection(event, this)">
+                <i class="fa fa-folder-plus"></i>
+              </button>
+            </div>
             <div class="d-flex align-items-center gap-3">
               <span class="rank-num">${status.index + 1}</span>
               <img src="https://image.tmdb.org/t/p/w200${movie.posterPath}"

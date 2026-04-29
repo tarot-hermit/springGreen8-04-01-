@@ -4,6 +4,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import java.net.URLEncoder;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -46,7 +48,28 @@ public class LoginSessionInterceptor implements HandlerInterceptor {
             return;
         }
 
-        response.sendRedirect(request.getContextPath() + "/user/login");
+        response.sendRedirect(buildLoginRedirectUrl(request));
+    }
+
+    private String buildLoginRedirectUrl(HttpServletRequest request) throws Exception {
+        String loginUrl = request.getContextPath() + "/user/login";
+        if (!"GET".equalsIgnoreCase(request.getMethod())) return loginUrl;
+
+        String uri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        String returnUrl = uri;
+        if (contextPath != null && !contextPath.isEmpty() && uri.startsWith(contextPath)) {
+            returnUrl = uri.substring(contextPath.length());
+        }
+        if (returnUrl == null || returnUrl.isEmpty() || returnUrl.startsWith("/user/login")) {
+            return loginUrl;
+        }
+
+        String query = request.getQueryString();
+        if (query != null && !query.isEmpty()) {
+            returnUrl += "?" + query;
+        }
+        return loginUrl + "?redirect=" + URLEncoder.encode(returnUrl, "UTF-8");
     }
 
     private void blockUnauthenticated(HttpServletRequest request,

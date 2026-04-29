@@ -1,0 +1,319 @@
+<style>
+  .sg-card {
+    position: relative;
+  }
+
+  .sg-quick-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .sg-card:hover .sg-quick-actions,
+  .sg-card:focus-within .sg-quick-actions {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .sg-quick-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(0,0,0,0.68);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.24);
+    backdrop-filter: blur(8px);
+    transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+
+  .sg-quick-btn:hover {
+    transform: scale(1.06);
+    background: #198754;
+    color: #fff;
+  }
+
+  .sg-quick-btn.active {
+    background: #198754;
+    border-color: #198754;
+    color: #fff;
+  }
+
+  .sg-quick-btn.sg-quick-watch.active {
+    background: #ff2f6e;
+    border-color: #ff2f6e;
+  }
+
+  .sg-quick-btn.sg-quick-watched.active {
+    background: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #111;
+  }
+
+  .sg-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    z-index: 2000;
+    transform: translateX(-50%) translateY(12px);
+    opacity: 0;
+    min-width: 210px;
+    max-width: calc(100vw - 32px);
+    padding: 12px 16px;
+    border-radius: 999px;
+    background: rgba(17,24,39,0.94);
+    color: #fff;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.28);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .sg-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (hover: none) {
+    .sg-quick-actions {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<div class="modal fade" id="quickCollectionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">컬렉션에 추가</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="quickCollectionModalBody">
+        <div class="text-secondary text-center py-3">불러오는 중...</div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <a href="${ctp}/collection/list" class="btn btn-outline-light btn-sm">컬렉션 관리</a>
+        <button type="button" class="btn btn-success btn-sm" data-bs-dismiss="modal">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="sgToast" class="sg-toast" role="status" aria-live="polite"></div>
+
+<script>
+var sgQuickContextPath = '${ctp}';
+var sgQuickLoggedIn = ${not empty sessionScope.loginUser ? 'true' : 'false'};
+var sgActiveCollectionMovieId = null;
+var sgActiveCollectionButton = null;
+
+function sgCurrentReturnUrl() {
+    var path = window.location.pathname;
+    if (sgQuickContextPath && path.indexOf(sgQuickContextPath) === 0) {
+        path = path.substring(sgQuickContextPath.length) || '/';
+    }
+    return path + window.location.search + window.location.hash;
+}
+
+function sgRequireLogin() {
+    window.location.href = sgQuickContextPath + '/user/login?redirect=' + encodeURIComponent(sgCurrentReturnUrl());
+}
+
+function sgToast(message) {
+    var toast = document.getElementById('sgToast');
+    if (!toast) {
+        alert(message);
+        return;
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function() {
+        toast.classList.remove('show');
+    }, 1500);
+}
+
+function sgStop(event) {
+    if (!event) return;
+    event.preventDefault();
+    event.stopPropagation();
+}
+
+function sgListStateKey() {
+    return 'sg:list-scroll:' + window.location.pathname + sgCanonicalSearch();
+}
+
+function sgCanonicalSearch() {
+    if (!window.URLSearchParams || !window.location.search) return window.location.search;
+    var params = new URLSearchParams(window.location.search);
+    var pairs = [];
+    params.forEach(function(value, key) {
+        pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+    });
+    pairs.sort();
+    return pairs.length ? '?' + pairs.join('&') : '';
+}
+
+function sgSaveListState() {
+    try {
+        sessionStorage.setItem(sgListStateKey(), String(window.scrollY || window.pageYOffset || 0));
+    } catch (e) {
+    }
+}
+
+function sgOpenDetail(url) {
+    sgSaveListState();
+    window.location.href = url;
+}
+
+function sgToggleWatch(event, btn) {
+    sgStop(event);
+    if (!sgQuickLoggedIn) {
+        sgRequireLogin();
+        return;
+    }
+    var tmdbId = btn.getAttribute('data-tmdb-id');
+    $.post(sgQuickContextPath + '/movie/watchlist', { tmdbId: tmdbId }, function(res) {
+        if (res === 'ok') {
+            btn.classList.add('active');
+            sgToast('보고싶어요에 담았습니다.');
+        } else if (res === 'cancel') {
+            btn.classList.remove('active');
+            sgToast('보고싶어요에서 뺐습니다.');
+        } else if (res === 'login') {
+            sgRequireLogin();
+        } else {
+            sgToast('처리하지 못했습니다.');
+        }
+    });
+}
+
+function sgToggleWatched(event, btn) {
+    sgStop(event);
+    if (!sgQuickLoggedIn) {
+        sgRequireLogin();
+        return;
+    }
+    var tmdbId = btn.getAttribute('data-tmdb-id');
+    $.post(sgQuickContextPath + '/movie/watched/toggle', { movieNo: tmdbId }, function(res) {
+        if (res.status === 'added') {
+            btn.classList.add('active');
+            sgToast('봤어요에 추가했습니다.');
+        } else if (res.status === 'removed') {
+            btn.classList.remove('active');
+            sgToast('봤어요에서 뺐습니다.');
+        } else if (res.status === 'login') {
+            sgRequireLogin();
+        } else {
+            sgToast('처리하지 못했습니다.');
+        }
+    }, 'json');
+}
+
+function sgOpenCollection(event, btn) {
+    sgStop(event);
+    if (!sgQuickLoggedIn) {
+        sgRequireLogin();
+        return;
+    }
+    sgActiveCollectionMovieId = btn.getAttribute('data-tmdb-id');
+    sgActiveCollectionButton = btn;
+    $('#quickCollectionModalBody').html('<div class="text-secondary text-center py-3">불러오는 중...</div>');
+    new bootstrap.Modal(document.getElementById('quickCollectionModal')).show();
+    sgLoadCollections();
+}
+
+function sgLoadCollections() {
+    $.get(sgQuickContextPath + '/collection/my', { movieId: sgActiveCollectionMovieId }, function(list) {
+        sgRenderCollections(list || []);
+    }, 'json');
+}
+
+function sgRenderCollections(list) {
+    if (!list.length) {
+        $('#quickCollectionModalBody').html(
+            '<p class="text-secondary text-center mb-0">아직 컬렉션이 없습니다. ' +
+            '<a class="text-warning" href="' + sgQuickContextPath + '/collection/list">먼저 만들어보세요.</a></p>'
+        );
+        if (sgActiveCollectionButton) sgActiveCollectionButton.classList.remove('active');
+        return;
+    }
+
+    var html = '<div class="list-group">';
+    list.forEach(function(c) {
+        var activeClass = c.inCollection ? ' active border-warning' : '';
+        var actionText = c.inCollection ? '담김' : '추가';
+        html += '<button type="button" class="list-group-item list-group-item-action bg-dark text-white border-secondary' + activeClass + '"';
+        html += ' data-collection-id="' + c.collectionId + '" data-in-collection="' + (c.inCollection ? 'true' : 'false') + '"';
+        html += ' onclick="sgToggleCollection(this)">';
+        html += '<div class="d-flex justify-content-between align-items-center gap-2">';
+        html += '<span class="text-truncate">' + sgEscapeHtml(c.title) + '</span>';
+        html += '<span class="badge text-bg-warning">' + actionText + '</span>';
+        html += '</div></button>';
+    });
+    html += '</div>';
+    $('#quickCollectionModalBody').html(html);
+    sgSyncCollectionButton();
+}
+
+function sgToggleCollection(btn) {
+    $.post(sgQuickContextPath + '/collection/movie/toggle', {
+        collectionId: btn.getAttribute('data-collection-id'),
+        movieId: sgActiveCollectionMovieId
+    }, function(res) {
+        if (res.status === 'added') {
+            btn.setAttribute('data-in-collection', 'true');
+            btn.classList.add('active', 'border-warning');
+            $(btn).find('.badge').text('담김');
+            sgToast('컬렉션에 추가했습니다.');
+        } else if (res.status === 'removed') {
+            btn.setAttribute('data-in-collection', 'false');
+            btn.classList.remove('active', 'border-warning');
+            $(btn).find('.badge').text('추가');
+            sgToast('컬렉션에서 뺐습니다.');
+        } else if (res.status === 'login') {
+            sgRequireLogin();
+        } else {
+            sgToast('컬렉션에 담을 수 없습니다.');
+        }
+        sgSyncCollectionButton();
+    }, 'json');
+}
+
+function sgSyncCollectionButton() {
+    var hasSelected = false;
+    $('#quickCollectionModalBody [data-in-collection="true"]').each(function() {
+        hasSelected = true;
+    });
+    if (sgActiveCollectionButton) {
+        sgActiveCollectionButton.classList.toggle('active', hasSelected);
+    }
+}
+
+function sgEscapeHtml(value) {
+    return $('<div>').text(value == null ? '' : String(value)).html();
+}
+
+$(function() {
+    try {
+        var savedScroll = sessionStorage.getItem(sgListStateKey());
+        if (savedScroll !== null) {
+            sessionStorage.removeItem(sgListStateKey());
+            window.scrollTo(0, parseInt(savedScroll, 10) || 0);
+        }
+    } catch (e) {
+    }
+});
+</script>

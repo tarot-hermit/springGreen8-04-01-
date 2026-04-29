@@ -1,2 +1,6 @@
 src/main/resources/app.properties
 target/
+tmp/
+node_modules/
+docs/presentation/outputs/
+*.tmp
