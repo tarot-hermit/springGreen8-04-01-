@@ -3,6 +3,10 @@ package com.spring.springGreen8.service;
 import java.util.List;
 import com.spring.springGreen8.vo.CollectionVO;
 
+/**
+ * 컬렉션 기능의 서비스 계약.
+ * 컬렉션 CRUD, 공개/비공개 제어, 콘텐츠 추가/제거 기능을 정의한다.
+ */
 public interface CollectionService {
     int createCollection(CollectionVO vo);
     List<CollectionVO> getMyCollections(String mid);

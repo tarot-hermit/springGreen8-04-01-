@@ -98,10 +98,11 @@
 		</dependency>
 
 		<!-- Servlet / JSP / JSTL -->
+		<!-- Tomcat 9 = Servlet 4.0 구현체. provided: 컨테이너가 런타임에 제공 -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.5</version>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

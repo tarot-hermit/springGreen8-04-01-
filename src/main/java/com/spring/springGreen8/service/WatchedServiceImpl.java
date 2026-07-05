@@ -11,6 +11,10 @@ import com.spring.springGreen8.vo.WatchedVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * '봤어요' 기록의 비즈니스 로직 구현체.
+ * TMDB 콘텐츠를 로컬 movie와 연결한 뒤 사용자 시청 완료 상태를 토글한다.
+ */
 public class WatchedServiceImpl implements WatchedService {
 
     @Autowired

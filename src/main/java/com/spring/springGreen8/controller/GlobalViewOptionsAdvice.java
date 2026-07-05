@@ -16,6 +16,10 @@ import com.spring.springGreen8.dao.AdminDAO;
 import com.spring.springGreen8.dao.SearchHistoryDAO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 모든 화면에서 공통으로 필요한 모델 데이터를 주입한다.
+ * 로그인 사용자, 인기 검색어, 관리자 통계처럼 여러 JSP가 함께 쓰는 값을 제공한다.
+ */
 @ControllerAdvice
 public class GlobalViewOptionsAdvice {
 

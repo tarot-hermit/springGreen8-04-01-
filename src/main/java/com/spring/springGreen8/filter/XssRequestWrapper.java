@@ -12,10 +12,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+/**
+ * HttpServletRequest 파라미터 값을 정제하는 래퍼.
+ * script 태그, 이벤트 속성, javascript URL 같은 위험 입력을 제거한다.
+ */
 public class XssRequestWrapper extends HttpServletRequestWrapper {
 
     private static final Pattern NULL_BYTE_PATTERN = Pattern.compile("\u0000");
@@ -179,6 +184,22 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
         @Override
         public int read() {
             return inputStream.read();
+        }
+
+        // Servlet 3.1 필수 구현 메서드 —— 미구현 시 Tomcat 9+ 에서 AbstractMethodError 발생
+        @Override
+        public boolean isFinished() {
+            return inputStream.available() == 0;
+        }
+
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+        @Override
+        public void setReadListener(ReadListener listener) {
+            // 동기 처리만 사용하므로 구현 불필요
         }
     }
 }

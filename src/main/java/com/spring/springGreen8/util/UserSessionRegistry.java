@@ -8,6 +8,10 @@ import javax.servlet.http.HttpSession;
 
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 로그인 사용자와 HttpSession을 매핑해 관리하는 세션 레지스트리.
+ * 중복 로그인 정리, 권한 변경 반영, 강제 탈퇴 시 활성 세션 종료에 사용한다.
+ */
 public final class UserSessionRegistry {
 
     private static final ConcurrentMap<Integer, Set<HttpSession>> USER_SESSIONS = new ConcurrentHashMap<>();

@@ -1,3 +1,4 @@
+<%@ page pageEncoding="UTF-8" %>
 <style>
   .sg-card {
     position: relative;
@@ -15,6 +16,12 @@
     transform: translateY(-4px);
     transition: opacity 0.18s ease, transform 0.18s ease;
   }
+
+  <c:if test="${empty sessionScope.loginUser}">
+  .sg-quick-actions {
+    display: none !important;
+  }
+  </c:if>
 
   .sg-card:hover .sg-quick-actions,
   .sg-card:focus-within .sg-quick-actions {

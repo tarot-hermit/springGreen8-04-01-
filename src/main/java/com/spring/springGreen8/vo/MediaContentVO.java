@@ -6,6 +6,10 @@ import java.util.List;
 import lombok.Data;
 
 @Data
+/**
+ * 영화/드라마/애니메이션 공통 콘텐츠 정보를 담는 값 객체.
+ * TMDB 응답을 화면 표시용 데이터로 변환할 때 사용한다.
+ */
 public class MediaContentVO {
     private int tmdbId;
     private String mediaType;

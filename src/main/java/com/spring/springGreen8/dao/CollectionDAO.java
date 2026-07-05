@@ -8,6 +8,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.CollectionVO;
 
 @Mapper
+/**
+ * 사용자 컬렉션 DB 접근 인터페이스.
+ * 컬렉션 기본 정보와 컬렉션-콘텐츠 매핑 테이블을 조회/저장한다.
+ */
 public interface CollectionDAO {
 
     // 컬렉션 생성

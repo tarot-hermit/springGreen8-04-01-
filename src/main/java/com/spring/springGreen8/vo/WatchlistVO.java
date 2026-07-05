@@ -5,6 +5,9 @@ import java.util.Date;
 import lombok.Data;
 
 @Data
+/**
+ * 사용자의 찜 목록 항목을 담는 값 객체.
+ */
 public class WatchlistVO {
 	 	private int watchNo;
 	    private int userNo;

@@ -4,6 +4,9 @@ import java.util.Date;
 import lombok.Data;
 
 @Data
+/**
+ * 신고 대상, 사유, 처리 상태를 담는 값 객체.
+ */
 public class ReportVO {
     private int    reportId;
     private String reporterMid;   // 신고자 (user_id)

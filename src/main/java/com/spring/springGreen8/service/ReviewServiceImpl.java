@@ -14,6 +14,10 @@ import com.spring.springGreen8.vo.ReviewVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 리뷰 기능의 비즈니스 로직 구현체.
+ * TMDB 콘텐츠를 로컬 movie와 연결하고 리뷰 작성자 권한, 좋아요 수 재계산을 처리한다.
+ */
 public class ReviewServiceImpl implements ReviewService {
 	
 	@Autowired

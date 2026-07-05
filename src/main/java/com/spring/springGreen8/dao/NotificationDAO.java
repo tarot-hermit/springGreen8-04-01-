@@ -8,6 +8,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.NotificationVO;
 
 @Mapper
+/**
+ * 사용자 알림 DB 접근 인터페이스.
+ * 댓글, 좋아요, 신고 처리 결과 알림의 생성/조회/읽음 처리를 담당한다.
+ */
 public interface NotificationDAO {
 
     int insertNotification(NotificationVO vo);

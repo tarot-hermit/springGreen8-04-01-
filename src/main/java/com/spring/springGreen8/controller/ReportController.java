@@ -16,6 +16,10 @@ import com.spring.springGreen8.service.ReportService;
 import com.spring.springGreen8.vo.ReportVO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 신고 접수 요청을 처리하는 컨트롤러.
+ * 리뷰/댓글 등 신고 대상과 사유를 검증한 뒤 운영 처리 대기 상태로 저장한다.
+ */
 @Controller
 @RequestMapping("/report")
 public class ReportController {

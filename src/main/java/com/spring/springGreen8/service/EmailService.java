@@ -11,6 +11,10 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
+/**
+ * 이메일 인증 코드를 발송하는 서비스.
+ * JavaMailSender를 통해 회원가입/계정 인증용 6자리 코드를 사용자 이메일로 보낸다.
+ */
 public class EmailService {
 
     @Autowired

@@ -14,6 +14,10 @@ import com.spring.springGreen8.service.UserService;
 import com.spring.springGreen8.util.UserSessionRegistry;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 로그인 세션의 유효성을 확인하는 인터셉터.
+ * 탈퇴, 권한 변경, 중복 로그인 등으로 세션이 더 이상 유효하지 않을 때 정리한다.
+ */
 public class LoginSessionInterceptor implements HandlerInterceptor {
 
     @Autowired

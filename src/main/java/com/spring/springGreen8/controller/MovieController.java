@@ -31,6 +31,10 @@ import com.spring.springGreen8.vo.SeasonVO;
 import com.spring.springGreen8.vo.UserVO;
 import com.spring.springGreen8.vo.WatchlistVO;
 
+/**
+ * 콘텐츠 탐색과 상세 화면을 담당하는 컨트롤러.
+ * 영화/드라마/애니메이션 목록, 검색, 상세, 예고편, 찜/봤어요 진입 요청을 처리한다.
+ */
 @Controller
 @RequestMapping("/movie")
 public class MovieController {
@@ -116,6 +120,9 @@ public class MovieController {
     }
 
     @RequestMapping("/detail/{tmdbId}")
+    /**
+     * 영화 상세 화면에 TMDB 상세 정보, 예고편, 키워드, OTT, 내 리뷰/찜 상태를 묶어서 전달한다.
+     */
     public String detail(@PathVariable int tmdbId, HttpSession session, Model model) {
         model.addAttribute("movie", tmdbService.getMovieDetail(tmdbId));
         model.addAttribute("cast", tmdbService.getCastList(tmdbId));
@@ -143,6 +150,9 @@ public class MovieController {
     }
 
     @RequestMapping("/tv/{tmdbId}")
+    /**
+     * 드라마 상세 화면을 구성하고 선택 시즌의 예고편이 없으면 시즌1, 시리즈 전체 순서로 fallback한다.
+     */
     public String tvDetail(@PathVariable int tmdbId,
                            @RequestParam(required = false) Integer seasonNo,
                            Model model) {
@@ -206,6 +216,9 @@ public class MovieController {
     }
 
     @RequestMapping("/search")
+    /**
+     * 제목/키워드/#태그 통합 검색을 수행하고 로그인 사용자의 최근 검색어를 중복 없이 저장한다.
+     */
     public String search(@RequestParam(defaultValue = "") String q,
                          @RequestParam(defaultValue = "1") int page,
                          @RequestParam(defaultValue = "all") String mediaType,
@@ -223,7 +236,7 @@ public class MovieController {
                 SearchHistoryVO history = new SearchHistoryVO();
                 history.setUserNo(loginUser.getUserNo());
                 history.setKeyword(q);
-                history.setResultCnt(searchList.size());
+                history.setResultCnt(searchResult.getTotalResults());
                 searchHistoryDAO.insertSearch(history);
             }
         }
@@ -282,6 +295,9 @@ public class MovieController {
 
     @RequestMapping(value = "/watched/toggle", method = RequestMethod.POST,
                     produces = "application/json; charset=utf-8")
+    /**
+     * 로그인 사용자의 '봤어요' 상태를 토글하고 Ajax 응답으로 처리 결과를 반환한다.
+     */
     @ResponseBody
     public Map<String, Object> toggleWatched(@RequestParam int movieNo, HttpSession session) {
         Map<String, Object> result = new HashMap<>();

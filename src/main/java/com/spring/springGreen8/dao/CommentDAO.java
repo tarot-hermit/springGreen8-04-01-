@@ -8,6 +8,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.CommentVO;
 
 @Mapper
+/**
+ * 리뷰 댓글 DB 접근 인터페이스.
+ * 댓글/답글 목록, 작성, 수정, 삭제와 작성자 확인 SQL을 담당한다.
+ */
 public interface CommentDAO {
 	int insertComment(CommentVO vo);
 	List<CommentVO> selectCommentsByReviewNo(int reviewNo);

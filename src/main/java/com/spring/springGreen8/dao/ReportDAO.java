@@ -6,6 +6,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.ReportVO;
 
 @Mapper
+/**
+ * 신고 내역 DB 접근 인터페이스.
+ * 신고 중복 확인, 신고 저장, 처리 상태 변경 SQL을 담당한다.
+ */
 public interface ReportDAO {
 
     // 신고 등록

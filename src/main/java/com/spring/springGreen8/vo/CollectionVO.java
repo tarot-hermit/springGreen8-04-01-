@@ -5,6 +5,9 @@ import java.util.Date;
 import lombok.Data;
 
 @Data
+/**
+ * 사용자 컬렉션과 컬렉션-콘텐츠 매핑 정보를 담는 값 객체.
+ */
 public class CollectionVO {
     private int collectionId;
     private String mid;         // userId (user_id)

@@ -13,6 +13,10 @@ import com.spring.springGreen8.vo.WatchlistVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 찜 목록의 비즈니스 로직 구현체.
+ * TMDB 콘텐츠를 로컬 movie와 연결한 뒤 사용자별 watchlist 상태를 토글한다.
+ */
 public class WatchlistServiceImpl implements WatchlistService {
 
 	@Autowired
@@ -32,9 +36,11 @@ public class WatchlistServiceImpl implements WatchlistService {
 		MovieVO movie = movieDAO.selectMovieByTmdbId(vo.getMovieNo());
 		if (movie == null) {
 			MovieVO tmdbMovie = tmdbService.getMovieDetail(vo.getMovieNo());
-			if(tmdbMovie == null) return "fail";
+			if (tmdbMovie == null) return "fail";
 			movieDAO.insertMovie(tmdbMovie);
 			movie = movieDAO.selectMovieByTmdbId(vo.getMovieNo());
+			// INSERT 직후 재조회 실패 방어 (NPE 방지)
+			if (movie == null) return "fail";
 		}
 		vo.setMovieNo(movie.getMovieNo());
 		

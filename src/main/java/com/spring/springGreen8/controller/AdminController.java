@@ -23,6 +23,10 @@ import com.spring.springGreen8.vo.ReportVO;
 import com.spring.springGreen8.vo.ReviewVO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 관리자 페이지 요청을 처리하는 컨트롤러.
+ * 대시보드, 회원 관리, 리뷰/댓글 관리, 신고 처리, 운영 통계를 담당한다.
+ */
 @Controller
 @RequestMapping("/admin")
 public class AdminController {

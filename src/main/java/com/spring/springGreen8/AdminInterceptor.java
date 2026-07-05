@@ -11,6 +11,10 @@ import org.springframework.web.servlet.ModelAndView;
 import com.spring.springGreen8.service.UserService;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 관리자 전용 URL 접근을 검사하는 인터셉터.
+ * /admin/** 요청에서 로그인 여부와 ADMIN 권한을 확인한다.
+ */
 public class AdminInterceptor implements HandlerInterceptor {
 
     @Autowired

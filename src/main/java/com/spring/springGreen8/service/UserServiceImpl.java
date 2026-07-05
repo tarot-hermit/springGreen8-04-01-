@@ -20,6 +20,10 @@ import com.spring.springGreen8.vo.UserVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 회원 기능의 비즈니스 로직 구현체.
+ * 비밀번호 해시, 카카오 계정 생성/연동, 탈퇴 시 관련 데이터 정리를 처리한다.
+ */
 public class UserServiceImpl implements UserService {
 
     private static final String ANONYMOUS_USER_ID = "__deleted_user__";

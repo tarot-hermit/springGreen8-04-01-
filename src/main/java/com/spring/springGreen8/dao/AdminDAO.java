@@ -11,6 +11,10 @@ import com.spring.springGreen8.vo.ReviewVO;
 import com.spring.springGreen8.vo.UserVO;
 
 @Mapper
+/**
+ * 관리자 화면에서 사용하는 운영 데이터 DB 접근 인터페이스.
+ * 회원/리뷰/댓글/신고/통계 조회와 상태 변경 SQL을 MyBatis와 연결한다.
+ */
 public interface AdminDAO {
 
     // 대시보드 통계

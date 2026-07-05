@@ -3,6 +3,10 @@ package com.spring.springGreen8.util;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+/**
+ * 회원/리뷰/댓글/신고/검색 입력값을 공통 검증하는 유틸리티.
+ * 컨트롤러별 중복 검증을 줄이고 서버 기준 검증 규칙을 한곳에 모은다.
+ */
 public class InputValidator {
 
     public static final String ID_REGEX = "^[a-zA-Z0-9]{4,20}$";

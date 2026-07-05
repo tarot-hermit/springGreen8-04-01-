@@ -10,6 +10,10 @@ import com.spring.springGreen8.vo.NotificationVO;
  * - 댓글/공감/신고처리 등 도메인 이벤트에 대한 알림 생성 책임을 중앙화한다.
  * - 컨트롤러 전용 조회/읽음 처리 위임 메서드도 함께 제공한다.
  */
+/**
+ * 알림 기능의 서비스 계약.
+ * 댓글, 좋아요, 신고 결과 알림 생성과 조회/읽음 처리 기능을 정의한다.
+ */
 public interface NotificationService {
 
     /**

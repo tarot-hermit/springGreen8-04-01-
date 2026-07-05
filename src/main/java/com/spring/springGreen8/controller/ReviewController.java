@@ -19,6 +19,10 @@ import com.spring.springGreen8.vo.MovieVO;
 import com.spring.springGreen8.vo.ReviewVO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 리뷰 기능을 처리하는 컨트롤러.
+ * 리뷰 작성/수정/삭제, 좋아요 토글, 별점 통계 조회 요청을 담당한다.
+ */
 @Controller
 @RequestMapping("/review")
 public class ReviewController {

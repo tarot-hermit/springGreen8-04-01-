@@ -13,6 +13,10 @@ import com.spring.springGreen8.vo.MovieVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 컬렉션 기능의 비즈니스 로직 구현체.
+ * 소유자 권한, 입력값 길이, 중복 콘텐츠 여부를 확인한 뒤 컬렉션 데이터를 변경한다.
+ */
 public class CollectionServiceImpl implements CollectionService {
 
     @Autowired

@@ -15,6 +15,10 @@ import com.spring.springGreen8.vo.LoginAttemptVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 로그인 실패 관리 구현체.
+ * 5회 실패 시 10분 잠금 정책을 적용하고 로그인 성공 시 실패 이력을 초기화한다.
+ */
 public class LoginAttemptServiceImpl implements LoginAttemptService {
 
     private static final Logger log = LoggerFactory.getLogger(LoginAttemptServiceImpl.class);

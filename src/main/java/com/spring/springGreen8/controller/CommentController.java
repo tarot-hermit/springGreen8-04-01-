@@ -14,6 +14,10 @@ import com.spring.springGreen8.service.CommentService;
 import com.spring.springGreen8.vo.CommentVO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 리뷰 댓글과 답글 요청을 처리하는 컨트롤러.
+ * 댓글 작성/수정/삭제와 2-depth 답글 저장, 알림 생성 흐름의 진입점이다.
+ */
 @Controller
 @RequestMapping("/comment")
 public class CommentController {

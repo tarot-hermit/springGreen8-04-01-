@@ -4,6 +4,9 @@ import java.util.Date;
 import lombok.Data;
 
 @Data
+/**
+ * 사용자 알림 메시지와 읽음 상태를 담는 값 객체.
+ */
 public class NotificationVO {
     private int    notiId;
     private String receiverMid;   // 알림 받는 사람 (user_id)

@@ -20,6 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.springGreen8.vo.KakaoProfileVO;
 
 @Service
+/**
+ * 카카오 로그인 연동 구현체.
+ * 카카오 OAuth 토큰 교환, 프로필 조회, 계정 연결에 필요한 외부 API 호출을 담당한다.
+ */
 public class KakaoLoginServiceImpl implements KakaoLoginService {
 
     private static final String AUTH_URL = "https://kauth.kakao.com/oauth/authorize";

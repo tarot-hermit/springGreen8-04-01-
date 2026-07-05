@@ -22,6 +22,10 @@ import com.spring.springGreen8.vo.UserVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 알림 기능의 비즈니스 로직 구현체.
+ * 서비스 이벤트를 사용자 알림 데이터로 변환하고 중복/읽음 상태를 관리한다.
+ */
 public class NotificationServiceImpl implements NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
@@ -42,8 +46,9 @@ public class NotificationServiceImpl implements NotificationService {
     private AdminDAO adminDAO;
 
     // ── 댓글 알림 ─────────────────────────────────────────
+    // REQUIRES_NEW: 알림 삽입 실패가 댓글 트랜잭션까지 롤백시키지 않도록 별도 트랜잭션으로 분리
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void createCommentNotification(CommentVO vo, String senderUserId) {
         ReviewVO review = reviewService.getReviewByNo(vo.getReviewNo());
         if (review == null || review.getUserNo() == vo.getUserNo()) return;

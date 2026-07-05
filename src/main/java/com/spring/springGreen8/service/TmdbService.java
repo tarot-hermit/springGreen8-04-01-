@@ -9,6 +9,10 @@ import com.spring.springGreen8.vo.MovieVO;
 import com.spring.springGreen8.vo.OttProviderVO;
 import com.spring.springGreen8.vo.SeasonVO;
 
+/**
+ * TMDB/YouTube 외부 API 연동 서비스 계약.
+ * 콘텐츠 목록, 검색, 상세, 출연진, OTT, 예고편 조회 기능을 정의한다.
+ */
 public interface TmdbService {
     List<MovieVO> getPopularMovies(int page);
     List<MovieVO> getPopularMovies(int page, String countryCode);

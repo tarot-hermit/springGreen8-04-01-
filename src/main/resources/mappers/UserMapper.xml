@@ -12,7 +12,10 @@
                 #{userAddr1}, #{userAddr2}, #{userZipcode})
     </insert>
 
-    <insert id="insertSocialUser" parameterType="UserVO">
+    <!-- useGeneratedKeys: INSERT 후 생성된 PK(user_no)를 UserVO.userNo에 자동 주입 -->
+    <!-- 없으면 insertSocialUser 후 userNo=0이 되어 selectUserByNo(0) → null → NPE 발생 -->
+    <insert id="insertSocialUser" parameterType="UserVO"
+            useGeneratedKeys="true" keyProperty="userNo">
         INSERT INTO users (user_id, user_pw, user_name, user_email, kakao_id, login_provider)
         VALUES (#{userId}, #{userPw}, #{userName}, #{userEmail}, #{kakaoId}, 'KAKAO')
     </insert>

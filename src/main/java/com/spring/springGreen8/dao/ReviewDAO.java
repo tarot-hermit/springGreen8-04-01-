@@ -9,6 +9,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.ReviewVO;
 
 @Mapper
+/**
+ * 리뷰 DB 접근 인터페이스.
+ * 리뷰 CRUD, 좋아요 토글, 별점 통계, 블라인드 처리 SQL을 담당한다.
+ */
 public interface ReviewDAO {
 	//리뷰 등록
 	int insertReview(ReviewVO vo);

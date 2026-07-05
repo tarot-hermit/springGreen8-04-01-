@@ -2,6 +2,10 @@ package com.spring.springGreen8.service;
 
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 회원 기능의 서비스 계약.
+ * 가입, 로그인, 프로필 수정, 비밀번호 변경, 카카오 계정 연결 기능을 정의한다.
+ */
 public interface UserService {
 	// 회원가입
     int join(UserVO vo);

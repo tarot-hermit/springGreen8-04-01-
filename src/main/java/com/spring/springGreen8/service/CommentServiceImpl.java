@@ -11,6 +11,10 @@ import com.spring.springGreen8.vo.CommentVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 댓글 기능의 비즈니스 로직 구현체.
+ * 작성자 권한, 2-depth 답글 관계, 리뷰 작성자 알림 생성을 처리한다.
+ */
 public class CommentServiceImpl implements CommentService {
 
 	@Autowired

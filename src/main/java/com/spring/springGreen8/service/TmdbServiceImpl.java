@@ -33,6 +33,10 @@ import com.spring.springGreen8.vo.EpisodeVO;
 import com.spring.springGreen8.vo.SeasonVO;
 
 @Service
+/**
+ * TMDB/YouTube 외부 API 연동 구현체.
+ * 콘텐츠 탐색/검색/상세 데이터를 가져오고 예고편 fallback 및 캐시 전략을 수행한다.
+ */
 public class TmdbServiceImpl implements TmdbService {
 
     private static final Logger log = LoggerFactory.getLogger(TmdbServiceImpl.class);
@@ -1173,6 +1177,9 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @Override
+    /**
+     * 영화 인기 목록을 TMDB에서 가져와 홈/목록 화면용 MovieVO 목록으로 변환한다.
+     */
     public List<MovieVO> getPopularMovies(int page) {
         String url = BASE_URL + "/movie/popular?api_key=" + resolveApiKey() + "&language=" + LANG + "&page=" + page + "&region=KR";
         return parseMovieList(getForMap(url));
@@ -1629,6 +1636,10 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @Override
+    /**
+     * 통합 검색 진입점.
+     * 제목 검색, 제목 보정 fallback, 키워드/discover fallback 순서로 결과 품질을 높인다.
+     */
     public MediaSearchResultVO searchContents(String query, int page, String mediaType, String countryCode) {
         String titleQuery = extractTitleSearchQuery(query);
         String keywordQuery = extractKeywordSearchQuery(query);
@@ -1661,6 +1672,9 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @Override
+    /**
+     * 영화 상세 정보를 TMDB에서 조회해 상세 페이지 표시용 MovieVO로 변환한다.
+     */
     public MovieVO getMovieDetail(int tmdbId) {
         String url = BASE_URL + "/movie/" + tmdbId + "?api_key=" + resolveApiKey() + "&language=" + LANG;
         Map<String, Object> item = getForMap(url);
@@ -1684,6 +1698,9 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @Override
+    /**
+     * 드라마 상세 정보를 TMDB에서 조회하고 시즌 목록을 함께 구성한다.
+     */
     public MediaContentVO getTvDetail(int tmdbId) {
         String url = BASE_URL + "/tv/" + tmdbId + "?api_key=" + resolveApiKey() + "&language=" + LANG;
         Map<String, Object> item = getForMap(url);
@@ -1780,6 +1797,9 @@ public class TmdbServiceImpl implements TmdbService {
 
     @Override
     @SuppressWarnings("unchecked")
+    /**
+     * 영화 예고편을 캐시, TMDB ko-KR, TMDB en-US, YouTube 검색 fallback 순서로 찾는다.
+     */
     public List<Map<String, Object>> getVideoList(int tmdbId) {
         // 영화 영상은 TMDB ko-KR -> TMDB en-US -> YouTube 검색 fallback 순서로 찾는다.
         // DB 캐시가 있으면 항상 먼저 사용해서 TMDB/YouTube API 호출을 건너뛴다.
@@ -1835,6 +1855,9 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @Override
+    /**
+     * 드라마 시리즈 전체 예고편을 캐시와 TMDB/YouTube fallback 순서로 찾는다.
+     */
     public List<Map<String, Object>> getTvVideoList(int tmdbId) {
         // 시리즈 영상도 영화와 같은 순서로 찾되, 검색어는 TV 시리즈 문맥에 맞춰 만든다.
         // DB 캐시가 있으면 항상 먼저 사용한다.
@@ -1872,6 +1895,9 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     @Override
+    /**
+     * 드라마 특정 시즌 예고편을 우선 찾고 없으면 YouTube 시즌 검색 후보까지 확장한다.
+     */
     public List<Map<String, Object>> getTvSeasonVideoList(int tmdbId, int seasonNo) {
         // 시즌 상세 영상은 시즌 번호까지 캐시 키에 포함해서 다른 시즌과 섞이지 않게 한다.
         // DB 캐시가 있으면 항상 먼저 사용한다.

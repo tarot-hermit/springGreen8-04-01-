@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import com.spring.springGreen8.service.TmdbService;
 import com.spring.springGreen8.vo.MovieVO;
 
+/**
+ * 메인 화면을 구성하는 컨트롤러.
+ * 홈 배너와 인기/상영/트렌딩/개봉 예정 콘텐츠 데이터를 화면에 전달한다.
+ */
 @Controller
 public class HomeController {
 

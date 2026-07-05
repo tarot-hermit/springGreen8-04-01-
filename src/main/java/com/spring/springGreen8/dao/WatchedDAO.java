@@ -6,6 +6,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.WatchedVO;
 
 @Mapper
+/**
+ * '봤어요' 기록 DB 접근 인터페이스.
+ * 사용자별 시청 완료 콘텐츠의 저장, 삭제, 목록 조회 SQL을 담당한다.
+ */
 public interface WatchedDAO {
 
     // 봤어요 추가

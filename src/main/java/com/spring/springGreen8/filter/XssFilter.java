@@ -10,6 +10,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * 요청 파라미터의 XSS 위험 값을 정리하는 필터.
+ * 일반 폼 요청은 XssRequestWrapper로 감싸고, 파일 업로드 요청은 제외한다.
+ */
 public class XssFilter implements Filter {
 
     @Override

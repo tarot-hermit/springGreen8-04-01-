@@ -14,6 +14,10 @@ import com.spring.springGreen8.service.WatchedService;
 import com.spring.springGreen8.vo.UserVO;
 import com.spring.springGreen8.vo.WatchedVO;
 
+/**
+ * 사용자의 '봤어요' 기록을 처리하는 컨트롤러.
+ * 콘텐츠 시청 완료 토글 요청을 받아 개인 기록 테이블과 연결한다.
+ */
 @Controller
 @RequestMapping("/watched")
 public class WatchedController {

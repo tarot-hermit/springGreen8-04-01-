@@ -5,6 +5,9 @@ import java.util.Date;
 import lombok.Data;
 
 @Data
+/**
+ * 리뷰 본문, 별점, 스포일러 여부, 좋아요 수를 담는 값 객체.
+ */
 public class ReviewVO {
 	private int reviewNo;
 	private int movieNo;

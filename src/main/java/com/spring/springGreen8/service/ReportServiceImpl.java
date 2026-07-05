@@ -10,6 +10,10 @@ import com.spring.springGreen8.vo.ReportVO;
 
 @Service
 @Transactional(readOnly = true)
+/**
+ * 신고 기능의 비즈니스 로직 구현체.
+ * 로그인 사용자 기준으로 신고 대상과 사유를 검증한 뒤 운영 처리 대기 상태로 저장한다.
+ */
 public class ReportServiceImpl implements ReportService {
 
     @Autowired

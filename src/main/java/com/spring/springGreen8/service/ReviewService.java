@@ -5,6 +5,10 @@ import java.util.Map;
 
 import com.spring.springGreen8.vo.ReviewVO;
 
+/**
+ * 리뷰 기능의 서비스 계약.
+ * 리뷰 CRUD, 좋아요 토글, 별점 통계, 사용자별 리뷰 조회 기능을 정의한다.
+ */
 public interface ReviewService {
 	//리뷰 등록
 	int writeReview(ReviewVO vo);

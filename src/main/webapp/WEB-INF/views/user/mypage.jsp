@@ -560,7 +560,7 @@ function loadCollections() {
         $('#collectionTabCount').text(list.length);
         var html = '';
         list.forEach(function(c) {
-            c.description = escapeHtml(c.description || '?ㅻ챸 ?놁쓬');
+            c.description = escapeHtml(c.description || '설명 없음');
             html += '<div class="col-12 col-md-6 col-lg-4">';
             html += '<div class="col-card" onclick="location.href=\'' + ctp + '/collection/detail/' + c.collectionId + '\'">';
             html += '<div class="d-flex justify-content-between align-items-start mb-1">';

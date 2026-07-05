@@ -6,7 +6,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>怨듦컻 而щ젆??/title>
+  <title>공개 컬렉션</title>
   <%@ include file="/WEB-INF/views/common/bs5.jsp" %>
   <style>
     body { background:#0f0f0f; color:#e0e0e0; }
@@ -29,9 +29,9 @@
 <%@ include file="/WEB-INF/views/common/nav.jsp" %>
 <div class="page-wrap">
   <div class="d-flex justify-content-between align-items-center mb-0">
-    <div class="page-title">怨듦컻 而щ젆??/div>
+    <div class="page-title">공개 컬렉션</div>
     <c:if test="${not empty sessionScope.loginUser}">
-      <a href="${ctp}/collection/list" class="btn btn-outline-secondary btn-sm">??而щ젆??/a>
+      <a href="${ctp}/collection/list" class="btn btn-outline-secondary btn-sm">내 컬렉션</a>
     </c:if>
   </div>
 
@@ -42,17 +42,17 @@
       <div class="col-owner">by ${fn:escapeXml(c.mid)}</div>
       <div class="col-desc">
         <c:choose>
-          <c:when test="${empty c.description}">?ㅻ챸 ?놁쓬</c:when>
+          <c:when test="${empty c.description}">설명 없음</c:when>
           <c:otherwise>${fn:escapeXml(c.description)}</c:otherwise>
         </c:choose>
       </div>
-      <div class="col-meta">?렗 ${c.movieCount}??</div>
+      <div class="col-meta">영화 ${c.movieCount}편</div>
     </div>
     </c:forEach>
   </div>
 
   <c:if test="${empty collections}">
-    <div class="empty">怨듦컻??而щ젆?섏씠 ?놁뒿?덈떎.</div>
+    <div class="empty">공개된 컬렉션이 없습니다.</div>
   </c:if>
 </div>
 </body>

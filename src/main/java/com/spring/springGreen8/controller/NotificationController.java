@@ -18,6 +18,10 @@ import com.spring.springGreen8.service.NotificationService;
 import com.spring.springGreen8.vo.NotificationVO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 사용자 알림 화면과 읽음 처리를 담당하는 컨트롤러.
+ * 댓글, 좋아요, 신고 결과 알림을 조회하고 읽음 상태로 변경한다.
+ */
 @Controller
 @RequestMapping("/notification")
 public class NotificationController {

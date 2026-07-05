@@ -19,6 +19,10 @@ import com.spring.springGreen8.service.CollectionService;
 import com.spring.springGreen8.vo.CollectionVO;
 import com.spring.springGreen8.vo.UserVO;
 
+/**
+ * 사용자 컬렉션 기능을 처리하는 컨트롤러.
+ * 컬렉션 생성/수정/삭제, 공개 여부 변경, 콘텐츠 추가/제거 요청을 담당한다.
+ */
 @Controller
 @RequestMapping("/collection")
 public class CollectionController {

@@ -43,6 +43,10 @@ import com.spring.springGreen8.vo.UserVO;
 import com.spring.springGreen8.vo.WatchedVO;
 import com.spring.springGreen8.vo.WatchlistVO;
 
+/**
+ * 회원 계정과 마이페이지 흐름을 담당하는 컨트롤러.
+ * 가입, 로그인, 이메일 인증, 카카오 로그인, 프로필 수정, 비밀번호 변경을 처리한다.
+ */
 @Controller
 @RequestMapping("/user")
 public class UserController {
@@ -93,6 +97,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/join", method = RequestMethod.POST)
+    /**
+     * 회원가입 입력값과 이메일 인증 상태를 검증한 뒤 비밀번호를 해시해 신규 회원을 저장한다.
+     */
     public String joinProc(UserVO vo, HttpSession session, Model model) {
         String userId = InputValidator.trimToEmpty(vo.getUserId());
         String userEmail = InputValidator.trimToEmpty(vo.getUserEmail());
@@ -177,6 +184,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
+    /**
+     * 로그인 실패 잠금 정책을 적용하고 성공 시 기존 세션을 정리한 뒤 새 로그인 세션을 등록한다.
+     */
     public String loginProc(String userId, String userPw, String redirect, HttpServletRequest request,
                             Model model, RedirectAttributes ra) {
         userId = InputValidator.trimToEmpty(userId);
@@ -245,6 +255,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/kakao/callback", method = RequestMethod.GET)
+    /**
+     * 카카오 OAuth 콜백을 처리해 기존 카카오 연동 계정 로그인 또는 계정 연결/신규 가입 흐름으로 분기한다.
+     */
     public String kakaoCallback(String code, String state, String error,
                                 HttpServletRequest request, Model model, RedirectAttributes ra) {
         HttpSession session = request.getSession();
@@ -367,6 +380,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/withdraw", method = RequestMethod.POST)
+    /**
+     * 현재 비밀번호를 재확인한 뒤 탈퇴 처리하고 사용자의 활성 세션을 종료한다.
+     */
     public String withdraw(String currentPw, HttpSession session, Model model) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
         if (loginUser == null) {
@@ -412,6 +428,9 @@ public class UserController {
     }
 
     @RequestMapping("/mypage")
+    /**
+     * 마이페이지에 프로필, 리뷰, 댓글, 찜, 봤어요, 컬렉션 데이터를 모아 전달한다.
+     */
     public String mypage(HttpSession session, Model model) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
         if (loginUser == null) {
@@ -455,6 +474,9 @@ public class UserController {
 
     @RequestMapping(value = "/sendEmail", method = RequestMethod.POST)
     @ResponseBody
+    /**
+     * 이메일 인증 코드를 생성해 발송하고 세션에 코드와 발송 시각을 저장한다.
+     */
     public String sendEmail(String userEmail, HttpSession session) {
         userEmail = InputValidator.trimToEmpty(userEmail);
         if (!InputValidator.isValidEmail(userEmail)) return "fail";
@@ -581,6 +603,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/changePw", method = RequestMethod.POST)
+    /**
+     * 현재 비밀번호 검증 후 새 비밀번호로 변경하고 중복 로그인 세션을 정리한다.
+     */
     public String changePw(String currentPw, String newPw, HttpSession session, Model model) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
         if (loginUser == null) {

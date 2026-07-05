@@ -8,6 +8,10 @@ import com.spring.springGreen8.dao.AdminDAO;
 import com.spring.springGreen8.vo.ReportVO;
 
 @Service
+/**
+ * 관리자 기능의 비즈니스 로직 구현체.
+ * 신고 처리 시 리뷰 블라인드, 알림 생성, 회원 세션 정리 같은 운영 결과를 함께 반영한다.
+ */
 public class AdminServiceImpl implements AdminService {
 
     private static final String BLIND_REVIEW_MESSAGE =

@@ -6,6 +6,10 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.springGreen8.vo.UserVO;
 
 @Mapper
+/**
+ * 회원 계정 DB 접근 인터페이스.
+ * 가입, 로그인 조회, 프로필 수정, 카카오 연동, 탈퇴 처리를 담당한다.
+ */
 public interface UserDAO {
 	 
 		int insertUser(UserVO vo);
