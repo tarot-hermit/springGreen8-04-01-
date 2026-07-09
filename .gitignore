@@ -2,5 +2,8 @@ src/main/resources/app.properties
 target/
 tmp/
 node_modules/
+docs/presentation/
 docs/presentation/outputs/
 *.tmp
+*.ppt
+*.pptx
