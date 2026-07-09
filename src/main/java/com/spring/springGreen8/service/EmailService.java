@@ -17,15 +17,15 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     // 발신자 주소 override. 미지정 시 mail.username 값을 사용한다.
-    @Value("${mail.from:}")
+    @Value("${MAIL_FROM:${mail.from:}}")
     private String fromAddress;
 
     // SMTP 계정 이메일. fromAddress fallback으로 쓰인다.
-    @Value("${mail.username:}")
+    @Value("${MAIL_USERNAME:${mail.username:}}")
     private String mailUsername;
 
     // 표시 이름. 미설정 시 이메일 주소만 노출된다.
-    @Value("${mail.from.name:SpringGreen8}")
+    @Value("${MAIL_FROM_NAME:${mail.from.name:SpringGreen8}}")
     private String fromName;
 
     private String resolveFromAddress() {
