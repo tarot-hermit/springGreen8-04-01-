@@ -66,6 +66,12 @@ public class TmdbServiceImpl implements TmdbService {
             return apiKey.trim();
         }
 
+        String envApiKey = System.getenv("TMDB_API_KEY");
+        if (envApiKey != null && !envApiKey.trim().isEmpty()) {
+            apiKey = envApiKey.trim();
+            return apiKey;
+        }
+
         try {
             Properties props = new Properties();
             try (java.io.InputStream in =
@@ -82,7 +88,17 @@ public class TmdbServiceImpl implements TmdbService {
     }
 
     private String resolveYoutubeApiKey() {
-        return youtubeApiKey == null ? "" : youtubeApiKey.trim();
+        if (youtubeApiKey != null && !youtubeApiKey.trim().isEmpty()) {
+            return youtubeApiKey.trim();
+        }
+
+        String envYoutubeApiKey = System.getenv("YOUTUBE_API_KEY");
+        if (envYoutubeApiKey != null && !envYoutubeApiKey.trim().isEmpty()) {
+            youtubeApiKey = envYoutubeApiKey.trim();
+            return youtubeApiKey;
+        }
+
+        return "";
     }
 
     private boolean isYoutubeUrl(String url) {
